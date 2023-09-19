@@ -10,12 +10,12 @@ use tokio::sync::mpsc::Sender;
 use crate::consts;
 
 pub async fn execute_command(cmd: &str) -> anyhow::Result<Output> {
-    tracing::info!("execute command {cmd}");
+    tracing::info!("execute command `{cmd}`");
     Ok(Command::new("sh").args(["-c", cmd]).output().await?)
 }
 
 pub async fn execute_command_with_args_sender(cmd: &str, args: Vec<String>, tx: Sender<String>) {
-    tracing::info!("execute command `{cmd}` with args: {args:?}");
+    tracing::info!("execute command `{cmd}` with args: `{args:?}`");
     let mut child = Command::new(cmd)
         .args(args)
         .stdout(Stdio::piped())
