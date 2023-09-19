@@ -55,7 +55,8 @@ pub fn formatted_now(fmt: &str) -> String {
 }
 
 #[inline]
-pub fn human_bytes(mut value: f64) -> String {
+pub fn human_bytes(value: u64) -> String {
+    let mut value = value as f64;
     if value < 1024.0 {
         return format!("{value:.2} B");
     }
@@ -66,12 +67,6 @@ pub fn human_bytes(mut value: f64) -> String {
         }
     }
     format!("{value}")
-}
-
-#[inline]
-pub fn format_as_gb(value: u64) -> String {
-    let gb = value as f64 / (1024.0 * 1024.0 * 1024.0);
-    format!("{gb:.2} GB")
 }
 
 #[inline]
