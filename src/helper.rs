@@ -10,10 +10,12 @@ use tokio::sync::mpsc::Sender;
 use crate::consts;
 
 pub async fn execute_command(cmd: &str) -> anyhow::Result<Output> {
+    tracing::info!("execute command {cmd}");
     Ok(Command::new("sh").args(["-c", cmd]).output().await?)
 }
 
 pub async fn execute_command_with_args_sender(cmd: &str, args: Vec<String>, tx: Sender<String>) {
+    tracing::info!("execute command `{cmd}` with args: {args:?}");
     let mut child = Command::new(cmd)
         .args(args)
         .stdout(Stdio::piped())
@@ -109,4 +111,10 @@ pub fn calculate_agent_version(version: &str) -> u32 {
         (value(&c, "major"), value(&c, "minor"), value(&c, "patch"))
     });
     (major as u32) << 16 | (minor as u32) << 8 | patch as u32
+}
+
+pub async fn add_execute_permission(filepath: &str) -> anyhow::Result<()> {
+    #[cfg(unix)]
+    execute_command(&format!("chmod a+x {}", filepath)).await?;
+    Ok(())
 }

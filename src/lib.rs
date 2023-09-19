@@ -18,6 +18,7 @@ macro_rules! extract_all_files {
             }
             let file = $asset::get(filepath).unwrap().data;
             tokio::fs::write(filepath, file).await?;
+            $crate::helper::add_execute_permission(filepath).await?;
         }
     };
 }
