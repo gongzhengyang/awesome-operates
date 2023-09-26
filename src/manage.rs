@@ -71,5 +71,5 @@ pub async fn binary_filepath_execute_success(filepath: &str) -> anyhow::Result<b
         return Ok(false);
     }
     helper::add_execute_permission(filepath).await?;
-    Ok(helper::execute_command(filepath).await?.status.success())
+    Ok(helper::execute_command(&format!("{filepath} --version")).await?.status.success())
 }
