@@ -2,6 +2,13 @@
 name = "awesome-operates"
 version = "0.1.1"
 edition = "2021"
+categories = ["asynchronous"]
+description = "A reposity includs many common use code utils"
+keywords = ["axum", "tokio", "systemd"]
+authors = ["Gongzhengyang <gongzhengyangfindyourdream@gmail.com>"]
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com:gongzhengyang/awesome-operates"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
