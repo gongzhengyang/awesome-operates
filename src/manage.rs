@@ -57,8 +57,8 @@ pub async fn check_update_binary(
 ) -> anyhow::Result<()> {
     tracing::debug!("check update binary");
     if binary_filepath_execute_success(update_filepath)
-            .await
-            .unwrap_or_default()
+        .await
+        .unwrap_or_default()
     {
         tracing::info!("rename {update_filepath} into {original_filepath}");
         tokio::fs::rename(update_filepath, original_filepath).await?;
@@ -71,5 +71,8 @@ pub async fn binary_filepath_execute_success(filepath: &str) -> anyhow::Result<b
         return Ok(false);
     }
     helper::add_execute_permission(filepath).await?;
-    Ok(helper::execute_command(&format!("{filepath} --version")).await?.status.success())
+    Ok(helper::execute_command(&format!("{filepath} --version"))
+        .await?
+        .status
+        .success())
 }
