@@ -16,7 +16,6 @@ repository = "https://github.com/gongzhengyang/awesome-operates"
 anyhow = "1"
 build-data = "0.1"
 chrono = "0.4"
-lazy_static = "*"
 regex = "1"
 rust_decimal = { version = "1.32", features = ["serde-float"] }
 tokio = { version = "1", features = ["full"] }
