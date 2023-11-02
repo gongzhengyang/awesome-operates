@@ -15,8 +15,7 @@ pub struct RequestMatcher {
 }
 
 impl RequestMatcher {
-    pub fn from_route_methods(route_methods: Vec<(String, MethodRouter)>) -> Self
-    {
+    pub fn from_route_methods(route_methods: Vec<(String, MethodRouter)>) -> Self {
         let mut router = Router::new();
         for (path, resp) in route_methods {
             router = router.route(path.as_ref(), resp);
@@ -68,7 +67,6 @@ pub async fn response_to_json(response: Response) -> Value {
         &hyper::body::to_bytes(response.into_body())
             .await
             .unwrap()
-            .to_vec(),
     )
         .unwrap()
 }
@@ -147,7 +145,12 @@ mod tests {
                 ),
             ]
                 .to_vec();
-        RequestMatcher::from_route_methods(route_handlers.into_iter().map(|(x, y)| (x.to_owned(), y)).collect())
+        RequestMatcher::from_route_methods(
+            route_handlers
+                .into_iter()
+                .map(|(x, y)| (x.to_owned(), y))
+                .collect(),
+        )
     }
 
     #[tokio::test]
