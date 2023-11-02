@@ -1,14 +1,6 @@
 {
   "components": {
     "schemas": {
-      "AuthType": {
-        "description": "认证类型\n\n- `1`: `MD5`\n\n- `2`: `SHA`",
-        "enum": [
-          1,
-          2
-        ],
-        "type": "integer"
-      },
       "CommandExecuteResult": {
         "description": "命令执行结果",
         "properties": {
@@ -659,7 +651,6 @@
   "paths": {
     "/device/": {
       "get": {
-        "description": "查询过一次之后，所有保存的数据会进行一次清空，下一次查询的数据是本次查询之后产生的新数据",
         "responses": {
           "200": {
             "content": {
@@ -676,6 +667,46 @@
           }
         },
         "summary": "查询设备状态数据 (最多保存历史1000条)"
+      }
+    },
+    "/device/:id/": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceStatus"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "查询设备状态数据 (最多保存历史1000条) id"
+      }
+    },
+    "/device/:id/:id2/": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceStatus"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "查询设备状态数据 (最多保存历史1000条) id id"
       }
     },
     "/device/single": {
@@ -721,6 +752,34 @@
           }
         },
         "summary": "以root用户执行操作系统命令并获取返回"
+      }
+    },
+    "/execute/:id/": {
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteCommand"
+              }
+            }
+          },
+          "description": "命令执行",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandExecuteResult"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "以root用户执行操作系统命令并获取返回 id"
       }
     },
     "/execute/reboot/": {

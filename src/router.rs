@@ -2,8 +2,8 @@ use axum::{
     body::Body,
     http::{self, Request},
     response::Response,
-    routing::MethodRouter,
     Router,
+    routing::MethodRouter,
 };
 use hyper::Method;
 use serde_json::Value;
@@ -15,10 +15,11 @@ pub struct RequestMatcher {
 }
 
 impl RequestMatcher {
-    pub fn from_route_methods(route_methods: Vec<(&str, MethodRouter)>) -> Self {
+    pub fn from_route_methods(route_methods: Vec<(String, MethodRouter)>) -> Self
+    {
         let mut router = Router::new();
         for (path, resp) in route_methods {
-            router = router.route(path, resp);
+            router = router.route(path.as_ref(), resp);
         }
         RequestMatcher { router }
     }
@@ -52,6 +53,26 @@ impl RequestMatcher {
     }
 }
 
+pub async fn response_to_str(response: Response) -> String {
+    String::from_utf8(
+        hyper::body::to_bytes(response.into_body())
+            .await
+            .unwrap()
+            .to_vec(),
+    )
+        .unwrap()
+}
+
+pub async fn response_to_json(response: Response) -> Value {
+    serde_json::from_slice(
+        &hyper::body::to_bytes(response.into_body())
+            .await
+            .unwrap()
+            .to_vec(),
+    )
+        .unwrap()
+}
+
 #[macro_export]
 macro_rules! method_exchange {
     ($method:expr, $path:expr, $resp:expr) => {
@@ -82,20 +103,10 @@ macro_rules! build_method_router {
 
 #[cfg(test)]
 mod tests {
-    use axum::extract::{Json, Path};
     use axum::{http::Method, routing::get};
+    use axum::extract::{Json, Path};
 
     use super::*;
-
-    async fn response_to_str(response: Response) -> String {
-        String::from_utf8(
-            hyper::body::to_bytes(response.into_body())
-                .await
-                .unwrap()
-                .to_vec(),
-        )
-        .unwrap()
-    }
 
     fn app() -> RequestMatcher {
         let route_handlers =
@@ -135,8 +146,8 @@ mod tests {
                     method_exchange!("get", "/macro", serde_json::json!({"default": ""})),
                 ),
             ]
-            .to_vec();
-        RequestMatcher::from_route_methods(route_handlers)
+                .to_vec();
+        RequestMatcher::from_route_methods(route_handlers.into_iter().map(|(x, y)| (x.to_owned(), y)).collect())
     }
 
     #[tokio::test]
@@ -185,7 +196,7 @@ mod tests {
                     .await
                     .unwrap(),
             )
-            .await;
+                .await;
             assert_eq!(response, expect);
         }
     }
