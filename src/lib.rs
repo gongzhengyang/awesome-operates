@@ -4,6 +4,7 @@ pub mod error;
 pub mod graceful;
 pub mod helper;
 pub mod manage;
+pub mod openapi;
 pub mod router;
 pub mod schedule;
 
