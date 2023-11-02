@@ -1,0 +1,1252 @@
+{
+  "components": {
+    "schemas": {
+      "AuthType": {
+        "description": "认证类型\n\n- `1`: `MD5`\n\n- `2`: `SHA`",
+        "enum": [
+          1,
+          2
+        ],
+        "type": "integer"
+      },
+      "CommandExecuteResult": {
+        "description": "命令执行结果",
+        "properties": {
+          "stderr": {
+            "description": "标准错误输出",
+            "type": "string"
+          },
+          "stdout": {
+            "description": "标准输出",
+            "type": "string"
+          },
+          "success": {
+            "description": "命令执行是否成功",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "stderr",
+          "stdout",
+          "success"
+        ],
+        "type": "object"
+      },
+      "CpuInfo": {
+        "description": "cpu信息",
+        "properties": {
+          "brand": {
+            "description": "cpu 品牌",
+            "type": "string"
+          },
+          "fifteen_load_avg": {
+            "description": "过去15分钟 CPU平均负载，数字会超过1, 保留两位小数",
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "five_load_avg": {
+            "description": "过去5分钟 CPU平均负载，数字会超过1, 保留两位小数",
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "frequency": {
+            "description": "时钟频率，单位：MHz",
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "one_load_avg": {
+            "description": "过去1分钟 CPU平均负载，数字会超过1, 保留两位小数",
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "usage": {
+            "description": "cpu 使用率，保留两位小数",
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "brand",
+          "fifteen_load_avg",
+          "five_load_avg",
+          "frequency",
+          "one_load_avg",
+          "usage"
+        ],
+        "type": "object"
+      },
+      "DeviceStatus": {
+        "properties": {
+          "boot_time": {
+            "description": "启动时间",
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "collect_time": {
+            "description": "采集时间",
+            "type": "string"
+          },
+          "cpu": {
+            "$ref": "#/components/schemas/CpuInfo"
+          },
+          "disk": {
+            "$ref": "#/components/schemas/DiskInfo",
+            "description": "硬盘信息"
+          },
+          "human_boot_time": {
+            "description": "格式化的启动时间, `%Y-%m-%d %H:%M:%S`",
+            "type": "string"
+          },
+          "human_uptime": {
+            "description": "格式化运行时间, 格式如下`42天23小时49分钟58秒`",
+            "type": "string"
+          },
+          "interfaces": {
+            "description": "网口信息",
+            "items": {
+              "$ref": "#/components/schemas/InterfaceInfo"
+            },
+            "type": "array"
+          },
+          "kernel_version": {
+            "description": "内核版本",
+            "type": "string"
+          },
+          "memory": {
+            "$ref": "#/components/schemas/MemInfo"
+          },
+          "os_version": {
+            "description": "系统版本",
+            "type": "string"
+          },
+          "uptime": {
+            "description": "运行时间",
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "boot_time",
+          "collect_time",
+          "cpu",
+          "disk",
+          "human_boot_time",
+          "human_uptime",
+          "interfaces",
+          "kernel_version",
+          "memory",
+          "os_version",
+          "uptime"
+        ],
+        "type": "object"
+      },
+      "DiskInfo": {
+        "description": "磁盘信息",
+        "properties": {
+          "available_space": {
+            "description": "可用空间",
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "disk_kind": {
+            "description": "磁盘类型, HDD,SSD,UNKNOWN",
+            "type": "string"
+          },
+          "file_system": {
+            "description": "磁盘文件系统类型, 比如 ext3, ext4, ntfs, ....",
+            "type": "string"
+          },
+          "human_available_space": {
+            "description": "可读可用空间，单位GB",
+            "type": "string"
+          },
+          "human_total_space": {
+            "description": "可读磁盘容量",
+            "type": "string"
+          },
+          "total_space": {
+            "description": "磁盘容量",
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "usage": {
+            "description": "使用率",
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "available_space",
+          "disk_kind",
+          "file_system",
+          "human_available_space",
+          "human_total_space",
+          "total_space",
+          "usage"
+        ],
+        "type": "object"
+      },
+      "EmptyResponse": {
+        "description": "空返回体",
+        "type": "null"
+      },
+      "EncryptionType": {
+        "description": "加密算法\n\n- `1`: `DES`\n\n- `2`: `AES`",
+        "enum": [
+          1,
+          2
+        ],
+        "type": "integer"
+      },
+      "ErrorMessageJsonResponse": {
+        "description": "错误消息",
+        "properties": {
+          "message": {
+            "description": "错误信息",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      },
+      "ExecuteCommand": {
+        "description": "命令执行",
+        "properties": {
+          "command": {
+            "description": "需要执行的命令",
+            "type": "string"
+          }
+        },
+        "required": [
+          "command"
+        ],
+        "type": "object"
+      },
+      "InterfaceConfig": {
+        "description": "网络管理",
+        "properties": {
+          "gateway4": {
+            "description": "默认网关",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ipaddress": {
+            "description": "ip地址",
+            "type": "string"
+          },
+          "mtu": {
+            "default": 1500,
+            "description": "default 1500, min 128",
+            "format": "uint16",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "nameservers": {
+            "description": "DNS服务器，可以填写多个",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "netmask": {
+            "description": "子网掩码",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ipaddress",
+          "nameservers",
+          "netmask"
+        ],
+        "type": "object"
+      },
+      "InterfaceInfo": {
+        "description": "网口信息",
+        "properties": {
+          "all_ipaddress": {
+            "description": "所有网口IP，单个网口可能有多个IP，可能也包含了ipv6",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "human_speed": {
+            "description": "可读速度，逢1024转变一次单位，比如 `1KB`, `12.22MB`, `782B`, `1.12GB`",
+            "type": "string"
+          },
+          "interface": {
+            "description": "网口名称",
+            "type": "string"
+          },
+          "ipaddress": {
+            "description": "网口IP",
+            "type": "string"
+          },
+          "mac": {
+            "description": "网口mac地址",
+            "type": "string"
+          },
+          "mgmt": {
+            "description": "是否是管理网口",
+            "type": "boolean"
+          },
+          "speed": {
+            "description": "网口网速，单位字节",
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "up": {
+            "description": "网口是否开启",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "all_ipaddress",
+          "human_speed",
+          "interface",
+          "ipaddress",
+          "mac",
+          "mgmt",
+          "speed",
+          "up"
+        ],
+        "type": "object"
+      },
+      "Logs": {
+        "description": "操作日志列表",
+        "items": {
+          "$ref": "#/components/schemas/OperateLog"
+        },
+        "type": "array"
+      },
+      "MemInfo": {
+        "description": "内存信息",
+        "properties": {
+          "human_total_memory": {
+            "type": "string"
+          },
+          "human_total_swap": {
+            "type": "string"
+          },
+          "human_used_memory": {
+            "type": "string"
+          },
+          "human_used_swap": {
+            "type": "string"
+          },
+          "memory_usage": {
+            "description": "内存使用率",
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "swap_usage": {
+            "description": "交换空间使用率",
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "total_memory": {
+            "description": "总内存",
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "total_swap": {
+            "description": "交换空间大小",
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "used_memory": {
+            "description": "使用内存",
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "used_swap": {
+            "description": "使用的交换空间",
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "human_total_memory",
+          "human_total_swap",
+          "human_used_memory",
+          "human_used_swap",
+          "memory_usage",
+          "swap_usage",
+          "total_memory",
+          "total_swap",
+          "used_memory",
+          "used_swap"
+        ],
+        "type": "object"
+      },
+      "OperateLog": {
+        "description": "操作日志",
+        "properties": {
+          "create_time": {
+            "description": "请求创建时间",
+            "type": "string"
+          },
+          "latency": {
+            "description": "响应耗时，单位 ms",
+            "format": "uint128",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "method": {
+            "description": "请求方法",
+            "type": "string"
+          },
+          "module": {
+            "description": "模块",
+            "type": "string"
+          },
+          "path": {
+            "description": "请求路径",
+            "type": "string"
+          },
+          "response_status_code": {
+            "description": "返回结果状态码",
+            "format": "uint16",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "summary": {
+            "description": "操作描述与摘要",
+            "type": "string"
+          },
+          "user_group": {
+            "description": "用户组",
+            "type": "string"
+          },
+          "username": {
+            "description": "用户名称",
+            "type": "string"
+          }
+        },
+        "required": [
+          "create_time",
+          "latency",
+          "method",
+          "module",
+          "path",
+          "response_status_code",
+          "summary",
+          "user_group",
+          "username"
+        ],
+        "type": "object"
+      },
+      "SnmpConfig": {
+        "description": "snmp",
+        "properties": {
+          "community": {
+            "description": "community 认证参数",
+            "type": "string"
+          },
+          "enabled": {
+            "description": "是否开启snmp",
+            "type": "boolean"
+          },
+          "trap": {
+            "description": "snmp 远程trap地址",
+            "type": "string"
+          },
+          "versions": {
+            "description": "开启的snmp版本, 列表类型，参数可选项是 1,2,3",
+            "items": {
+              "$ref": "#/components/schemas/SnmpVersion"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "community",
+          "enabled",
+          "trap",
+          "versions"
+        ],
+        "type": "object"
+      },
+      "SnmpUSMConfig": {
+        "description": "snmp",
+        "properties": {
+          "auth_password": {
+            "description": "认证密码, 由大小写英文字母/数字组成，8-32位",
+            "type": "string"
+          },
+          "auth_type": {
+            "$ref": "#/components/schemas/AuthType"
+          },
+          "encryption_password": {
+            "description": "加密密码, 由大小写英文字母/数字组成，8-32位",
+            "type": "string"
+          },
+          "encryption_type": {
+            "$ref": "#/components/schemas/EncryptionType"
+          },
+          "id": {
+            "description": "id",
+            "format": "uint64",
+            "minimum": 0.0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "username": {
+            "description": "用户名",
+            "type": "string"
+          }
+        },
+        "required": [
+          "auth_password",
+          "auth_type",
+          "encryption_password",
+          "encryption_type",
+          "username"
+        ],
+        "type": "object"
+      },
+      "SnmpVersion": {
+        "description": "- `1`: `v1`\n\n- `2`: `v2c`\n\n- `3`: `v3`",
+        "enum": [
+          1,
+          2,
+          3
+        ],
+        "type": "integer"
+      },
+      "SshConfig": {
+        "description": "ssh配置",
+        "properties": {
+          "addresses": {
+            "description": "允许登录的IP",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "enabled": {
+            "description": "是否开启ssh服务",
+            "type": "boolean"
+          },
+          "valid": {
+            "description": "false允许所有IP, true允许指定IP",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "addresses",
+          "enabled",
+          "valid"
+        ],
+        "type": "object"
+      },
+      "Syslog": {
+        "description": "syslog管理",
+        "properties": {
+          "address": {
+            "description": "远程syslog接收地址",
+            "type": "string"
+          },
+          "enabled": {
+            "description": "是否启动syslog服务",
+            "type": "boolean"
+          },
+          "port": {
+            "description": "远程syslog接收端口",
+            "format": "uint16",
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "protocol": {
+            "$ref": "#/components/schemas/TransportProtocol",
+            "description": "传输协议"
+          }
+        },
+        "required": [
+          "address",
+          "enabled",
+          "port",
+          "protocol"
+        ],
+        "type": "object"
+      },
+      "SyslogMessages": {
+        "properties": {
+          "messages": {
+            "description": "syslog 日志列表",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "messages"
+        ],
+        "type": "object"
+      },
+      "TimeConfig": {
+        "description": "时间设置",
+        "properties": {
+          "last_sync": {
+            "default": "2023-10-26 16:31:55",
+            "description": "ntp上次同步成功时间，只读",
+            "readOnly": true,
+            "type": "string"
+          },
+          "now": {
+            "default": "2023-11-01 18:34:51",
+            "description": "系统当前时, 只读",
+            "readOnly": true,
+            "type": "string"
+          },
+          "ntp_sync_success": {
+            "default": false,
+            "description": "ntp 时间同步是否成功, 只读",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "set_now": {
+            "description": "配置时间",
+            "type": "string"
+          },
+          "set_ntp": {
+            "description": "是否使用ntp同步时间",
+            "type": "boolean"
+          },
+          "set_ntp_address": {
+            "description": "ntp 远程地址",
+            "type": "string"
+          }
+        },
+        "required": [
+          "set_now",
+          "set_ntp",
+          "set_ntp_address"
+        ],
+        "type": "object"
+      },
+      "TransportProtocol": {
+        "enum": [
+          "TCP",
+          "UDP"
+        ],
+        "type": "string"
+      }
+    }
+  },
+  "info": {
+    "title": "系统层项目",
+    "version": ""
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/device/": {
+      "get": {
+        "description": "查询过一次之后，所有保存的数据会进行一次清空，下一次查询的数据是本次查询之后产生的新数据",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceStatus"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "查询设备状态数据 (最多保存历史1000条)"
+      }
+    },
+    "/device/single": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceStatus"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "查询设备当前信息(该查询与定时查询互不干扰)"
+      }
+    },
+    "/execute/": {
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteCommand"
+              }
+            }
+          },
+          "description": "命令执行",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandExecuteResult"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "以root用户执行操作系统命令并获取返回"
+      }
+    },
+    "/execute/reboot/": {
+      "put": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandExecuteResult"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "[设备操作] 重启机器"
+      }
+    },
+    "/execute/shutdown/": {
+      "put": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandExecuteResult"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "[设备操作] 关机"
+      }
+    },
+    "/logs": {
+      "get": {
+        "description": "- 每次最多获取1000条日志，超出限制的日志会被丢弃\n- 每次获取完日志以后，日志会被清空，保证不会重复获取到同一条日志\n- 日志按照时间正序排列\n- 如果请求其他接口的操作携带`Cookie`, 比如`Cookie: user_group=group123;username=user123`, 则获取到的日志会填充`user_group`和`username`字段",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Logs"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "获取所有系统操作层日志"
+      }
+    },
+    "/network": {
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InterfaceConfig"
+              }
+            }
+          },
+          "description": "网络管理",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandExecuteResult"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "配置管理网口IP"
+      }
+    },
+    "/snmpconfig/": {
+      "delete": {
+        "responses": {
+          "204": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "[snmp] 重置snmp配置",
+        "tags": [
+          "snmp"
+        ]
+      },
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnmpConfig"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "查询snmp配置",
+        "tags": [
+          "snmp"
+        ]
+      },
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SnmpConfig"
+              }
+            }
+          },
+          "description": "snmp",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandExecuteResult"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorMessageJsonResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "[snmp] 配置snmp",
+        "tags": [
+          "snmp"
+        ]
+      }
+    },
+    "/snmpusmconfig/": {
+      "delete": {
+        "responses": {
+          "204": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "[snmp] 清除USM配置",
+        "tags": [
+          "snmp"
+        ]
+      },
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SnmpUSMConfig"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "查询USM配置列表",
+        "tags": [
+          "snmp"
+        ]
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SnmpUSMConfig"
+              }
+            }
+          },
+          "description": "snmp",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandExecuteResult"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorMessageJsonResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "[snmp] 创建一个USM",
+        "tags": [
+          "snmp"
+        ]
+      }
+    },
+    "/snmpusmconfig/{id}": {
+      "delete": {
+        "responses": {
+          "204": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "[snmp] 清除USM配置",
+        "tags": [
+          "snmp"
+        ]
+      }
+    },
+    "/sshconfig/": {
+      "delete": {
+        "responses": {
+          "204": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "[ssh配置] 重置ssh配置",
+        "tags": [
+          "ssh配置"
+        ]
+      },
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SshConfig"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "查询ssh配置",
+        "tags": [
+          "ssh配置"
+        ]
+      },
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SshConfig"
+              }
+            }
+          },
+          "description": "ssh配置",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandExecuteResult"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorMessageJsonResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "[ssh配置] ssh配置",
+        "tags": [
+          "ssh配置"
+        ]
+      }
+    },
+    "/syslog/": {
+      "delete": {
+        "responses": {
+          "204": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "[syslog管理] 清除并重置syslog配置",
+        "tags": [
+          "syslog管理"
+        ]
+      },
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Syslog"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "获取syslog配置",
+        "tags": [
+          "syslog管理"
+        ]
+      },
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Syslog"
+              }
+            }
+          },
+          "description": "syslog管理",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandExecuteResult"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorMessageJsonResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "[syslog管理] 配置远程syslog服务",
+        "tags": [
+          "syslog管理"
+        ]
+      }
+    },
+    "/syslog/send": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyslogMessages"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorMessageJsonResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "发送syslog数据"
+      }
+    },
+    "/timeconfig/": {
+      "delete": {
+        "responses": {
+          "204": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "[时间设置] 清除当前NTP时间配置",
+        "tags": [
+          "时间设置"
+        ]
+      },
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeConfig"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "查询当前时间配置",
+        "tags": [
+          "时间设置"
+        ]
+      },
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimeConfig"
+              }
+            }
+          },
+          "description": "时间设置",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandExecuteResult"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorMessageJsonResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "[时间设置] 配置时间",
+        "tags": [
+          "时间设置"
+        ]
+      }
+    }
+  }
+}
