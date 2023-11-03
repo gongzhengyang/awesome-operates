@@ -8,6 +8,16 @@ use axum::{
 use serde_json::Value;
 use tower::{Service, ServiceExt};
 
+/// if used as static, use `tokio::sync::Mutex`, this is very importment
+/// ```rust
+/// use std::sync::Arc;
+/// use once_cell::sync::Lazy;
+///
+/// use tokio::sync::Mutex;
+///
+/// static REQUEST_MATCHER: Lazy<Arc<Mutex<RequestMatcher>>> = Lazy::new(||
+/// { Arc::new(Mutex::new(RequestMatcher::default())) });
+/// ```
 #[derive(Default)]
 pub struct RequestMatcher {
     pub router: Router,
@@ -36,13 +46,24 @@ impl RequestMatcher {
         let method = method.as_str().to_uppercase().parse().unwrap();
         tracing::debug!("match request [method]{} [path]:{} ", method, path);
         let request = Self::build_request(method, path, body);
-        tracing::debug!("match request {request:?}");
+        tracing::debug!("match request before{request:?}");
         let response = ServiceExt::<Request<Body>>::ready(&mut self.router)
             .await?
             .call(request)
             .await?;
-
+        tracing::debug!("match api with result status: {}", response.status());
         Ok(response)
+    }
+
+    pub async fn match_request_to_json_response(
+        &mut self,
+        method: Method,
+        path: &str,
+        body: Option<Value>,
+    ) -> anyhow::Result<Value> {
+        let response = self.match_request_to_response(method, path, body).await?;
+        let bytes = &hyper::body::to_bytes(response.into_body()).await?;
+        Ok(serde_json::from_slice(bytes)?)
     }
 
     pub fn build_request(method: Method, path: &str, body: Option<Value>) -> Request<Body> {

@@ -8,16 +8,17 @@ use crate::method_exchange;
 /// ```rust
 ///  async fn main() {
 ///     use axum::http::Method;
-/// use awesome_operates::router::RequestMatcher;
+///     use awesome_operates::router::RequestMatcher;
+///
 ///     let api = tokio::fs::read_to_string("api.json").await.unwrap();
 ///     let body = serde_json::from_slice(&api.as_bytes())?;
 ///
-///     let route_handles = awesome_operates::openapi::openapi_route_handles(body);
+///     let route_handles = awesome_operates::openapi::openapi_route_handles(body, "");
 ///     let mut request_matcher = RequestMatcher::from_route_methods(route_handles);
 ///     let result = request_matcher.match_request_to_response(Method::GET, "/api/text", None).await;
 /// }
 /// ```
-pub fn openapi_route_handles(openapi: &Value) -> Vec<(String, MethodRouter)> {
+pub fn openapi_route_handles(openapi: &Value, path_prefix: &str) -> Vec<(String, MethodRouter)> {
     let mut route_handlers = vec![];
     let default_json_value = serde_json::json!(serde_json::Value::Null);
     for (path, operate) in openapi.as_object().unwrap()["paths"]
@@ -48,7 +49,10 @@ pub fn openapi_route_handles(openapi: &Value) -> Vec<(String, MethodRouter)> {
             [summary]: {summary}: [request]: {request_body} \
             [component]: {component:?} resp: {resp}"
             );
-            route_handlers.push((path.clone(), method_exchange!(method, &path, resp)));
+            route_handlers.push((
+                format!("{path_prefix}{path}"),
+                method_exchange!(method, &path, resp),
+            ));
         }
     }
     route_handlers
