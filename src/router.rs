@@ -1,11 +1,11 @@
 use axum::{
     body::Body,
-    http::{self, Request},
+    http::{self, Method, Request},
     response::Response,
-    Router,
     routing::MethodRouter,
+    Router,
 };
-use hyper::Method;
+// use hyper::Method;
 use serde_json::Value;
 use tower::{Service, ServiceExt};
 
@@ -13,6 +13,10 @@ use tower::{Service, ServiceExt};
 pub struct RequestMatcher {
     pub router: Router,
 }
+
+unsafe impl Sync for RequestMatcher {}
+
+unsafe impl Send for RequestMatcher {}
 
 impl RequestMatcher {
     pub fn from_route_methods(route_methods: Vec<(String, MethodRouter)>) -> Self {
@@ -29,11 +33,16 @@ impl RequestMatcher {
         path: &str,
         body: Option<Value>,
     ) -> anyhow::Result<Response> {
+        // this line is very impoortdent
+        let method = method.as_str().to_uppercase().parse().unwrap();
+        tracing::debug!("match request [method]{} [path]:{} ", method, path);
         let request = Self::build_request(method, path, body);
+        tracing::debug!("match request {request:?}");
         let response = ServiceExt::<Request<Body>>::ready(&mut self.router)
             .await?
             .call(request)
             .await?;
+
         Ok(response)
     }
 
@@ -59,16 +68,11 @@ pub async fn response_to_str(response: Response) -> String {
             .unwrap()
             .to_vec(),
     )
-        .unwrap()
+    .unwrap()
 }
 
 pub async fn response_to_json(response: Response) -> Value {
-    serde_json::from_slice(
-        &hyper::body::to_bytes(response.into_body())
-            .await
-            .unwrap()
-    )
-        .unwrap()
+    serde_json::from_slice(&hyper::body::to_bytes(response.into_body()).await.unwrap()).unwrap()
 }
 
 #[macro_export]
@@ -85,14 +89,20 @@ macro_rules! method_exchange {
     };
 }
 
-// ///  get "/api/:id/test/:id2" ["a", "b"] -> get(|Path(paths): Path<Vec<String>>| async move {}}
 #[macro_export]
 macro_rules! build_method_router {
     ($method:ident, $path:expr, $resp:expr) => {
-        axum::routing::$method(
-            |axum::extract::Path(paths): axum::extract::Path<Vec<String>>| async move {
+        axum::routing::$method(|req: axum::extract::Request<axum::body::Body>| async move {
                 let mut resp = $resp;
-                resp["path_args"] = serde_json::json!(paths);
+                let (parts, body) = req.into_parts();
+                let bytes = hyper::body::to_bytes(body).await.unwrap_or_default();
+                let json_body = serde_json::from_slice(&bytes).unwrap_or_else(|_| serde_json::json!({}));
+                resp["request"] = serde_json::json!({
+                    "method": parts.method.as_str(),
+                    "path": parts.uri.to_string(),
+                    // "headers": parts.headers,
+                    "body": json_body
+                });
                 axum::Json(resp)
             },
         )
@@ -101,18 +111,19 @@ macro_rules! build_method_router {
 
 #[cfg(test)]
 mod tests {
-    use axum::{http::Method, routing::get};
     use axum::extract::{Json, Path};
+    use axum::{
+        http::Method,
+        routing::{get, post},
+    };
 
     use super::*;
 
     fn app() -> RequestMatcher {
         let route_handlers =
             [
-                (
-                    "/api",
-                    get(|| async { "GET api" }).post(|| async { "POST api" }),
-                ),
+                ("/api/", get(|| async { "GET api" })),
+                ("/api/", post(|| async { "POST api" })),
                 (
                     "/api/:id/test",
                     get(|Path(test): Path<String>| async move { format!("GET api {test}") })
@@ -144,7 +155,7 @@ mod tests {
                     method_exchange!("get", "/macro", serde_json::json!({"default": ""})),
                 ),
             ]
-                .to_vec();
+            .to_vec();
         RequestMatcher::from_route_methods(
             route_handlers
                 .into_iter()
@@ -157,8 +168,8 @@ mod tests {
     async fn basic() {
         let mut app = app();
         for (method, path, expect, body) in [
-            (Method::GET, "/api", "GET api", None),
-            (Method::POST, "/api", "POST api", None),
+            (Method::GET, "/api/", "GET api", None),
+            (Method::POST, "/api/", "POST api", None),
             (Method::GET, "/api/fake-id/test", "GET api fake-id", None),
             (
                 Method::PATCH,
@@ -190,14 +201,15 @@ mod tests {
             (
                 Method::GET,
                 "/macro/1/sa/222",
-                "{\"default\":\"\",\"path_args\":[\"1\",\"222\"]}",
+                "{\"default\":\"\",\"request\":{\"body\":{},\"method\":\"GET\",\"path\":\"/macro/1/sa/222\"}}",
                 None,
             ),
         ] {
-            let response = response_to_str(
-                app.match_request_to_response(method, path, body)
-                    .await
-                    .unwrap(),
+            let response = app.match_request_to_response(method.clone(), path, body)
+                .await
+                .unwrap();
+            println!("method: {method} path: {path} status: {}", response.status());
+            let response = response_to_str(response
             )
                 .await;
             assert_eq!(response, expect);

@@ -29,8 +29,12 @@ pub fn openapi_route_handles(openapi: &Value) -> Vec<(String, MethodRouter)> {
                 "summary": summary,
                 "component": component,
             });
+            tracing::debug!(
+                "set------[path]: {path}: [method]:{method}: \
+            [summary]: {summary}: [request]: {request_body} \
+            [component]: {component:?} resp: {resp}"
+            );
             route_handlers.push((path.clone(), method_exchange!(method, &path, resp)));
-            tracing::debug!("{path}: {method}: {summary}: {request_body} {component:?}");
         }
     }
     route_handlers
@@ -50,7 +54,7 @@ mod tests {
     use serde_json::Value;
 
     use crate::openapi::openapi_route_handles;
-    use crate::router::{RequestMatcher, response_to_json};
+    use crate::router::{response_to_json, RequestMatcher};
 
     use super::*;
 
@@ -60,7 +64,6 @@ mod tests {
         let openapi = serde_json::from_str::<Value>(&openapi).unwrap();
         let route_handles = openapi_route_handles(&openapi);
         let mut request_mather = RequestMatcher::from_route_methods(route_handles);
-        // let component = api_component()
         for (method, path, expect) in [
             (
                 Method::GET,
@@ -68,7 +71,6 @@ mod tests {
                 serde_json::json!({
                     "path": "/device/",
                     "method": "get",
-                    "path_args": [],
                     "summary": "查询设备状态数据 (最多保存历史1000条)",
                     "component": api_component(&openapi, "")
                 }),
@@ -78,7 +80,6 @@ mod tests {
                 "/device/iid/",
                 serde_json::json!({
                     "path": "/device/:id/",
-                    "path_args": ["iid"],
                     "method": "get",
                     "summary": "查询设备状态数据 (最多保存历史1000条) id",
                     "component": api_component(&openapi, "")
@@ -89,7 +90,6 @@ mod tests {
                 "/device/iid/id2/",
                 serde_json::json!({
                     "path": "/device/:id/:id2/",
-                    "path_args": ["iid", "id2"],
                     "method": "get",
                     "summary": "查询设备状态数据 (最多保存历史1000条) id id",
                     "component": api_component(&openapi, "")
@@ -100,7 +100,6 @@ mod tests {
                 "/execute/",
                 serde_json::json!({
                     "path": "/execute/",
-                    "path_args": [],
                     "method": "put",
                     "summary": "以root用户执行操作系统命令并获取返回",
                     "component": api_component(&openapi, "#/components/schemas/ExecuteCommand")
@@ -111,23 +110,21 @@ mod tests {
                 "/execute/21-test/",
                 serde_json::json!({
                     "path": "/execute/:id/",
-                    "path_args": ["21-test"],
                     "method": "put",
                     "summary": "以root用户执行操作系统命令并获取返回 id",
                     "component": api_component(&openapi, "#/components/schemas/ExecuteCommand")
                 }),
             ),
         ] {
-            assert_eq!(
-                expect,
-                response_to_json(
-                    request_mather
-                        .match_request_to_response(method, path, None)
-                        .await
-                        .unwrap()
-                )
+            let mut resp = response_to_json(
+                request_mather
+                    .match_request_to_response(method, path, None)
                     .await
-            );
+                    .unwrap(),
+            )
+            .await;
+            resp.as_object_mut().unwrap().remove("request");
+            assert_eq!(expect, resp);
         }
     }
 }
