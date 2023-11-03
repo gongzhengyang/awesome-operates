@@ -3,6 +3,20 @@ use serde_json::Value;
 
 use crate::method_exchange;
 
+/// load openapi json into route handlers
+///
+/// ```rust
+///  async fn main() {
+///     use axum::http::Method;
+/// use awesome_operates::router::RequestMatcher;
+///     let api = tokio::fs::read_to_string("api.json").await.unwrap();
+///     let body = serde_json::from_slice(&api.as_bytes())?;
+///
+///     let route_handles = awesome_operates::openapi::openapi_route_handles(body);
+///     let mut request_matcher = RequestMatcher::from_route_methods(route_handles);
+///     let result = request_matcher.match_request_to_response(Method::GET, "/api/text", None).await;
+/// }
+/// ```
 pub fn openapi_route_handles(openapi: &Value) -> Vec<(String, MethodRouter)> {
     let mut route_handlers = vec![];
     let default_json_value = serde_json::json!(serde_json::Value::Null);

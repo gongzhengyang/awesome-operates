@@ -21,8 +21,8 @@ pub struct InitSwagger {
 /// ```
 impl InitSwagger {
     pub fn new<T>(prefix: T, js_filename: T, index_html_filename: T, json_url: T) -> Self
-        where
-            T: Display
+    where
+        T: Display,
     {
         InitSwagger {
             file_prefix: prefix.to_string(),
@@ -39,7 +39,11 @@ impl InitSwagger {
 
     pub fn index_html_filepath(&self) -> String {
         let prefix = std::path::Path::new(&self.file_prefix);
-        prefix.join(&self.index_html_filename).to_str().unwrap().to_owned()
+        prefix
+            .join(&self.index_html_filename)
+            .to_str()
+            .unwrap()
+            .to_owned()
     }
 
     pub async fn build(&self) -> anyhow::Result<()> {
@@ -49,7 +53,8 @@ impl InitSwagger {
     }
 
     pub async fn rewrite_swagger_index_html(&self) -> anyhow::Result<()> {
-        let index_html = format!(r#"<!-- HTML for static distribution bundle build -->
+        let index_html = format!(
+            r#"<!-- HTML for static distribution bundle build -->
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -68,14 +73,20 @@ impl InitSwagger {
     <script src="./{}" charset="UTF-8"> </script>
   </body>
 </html>
-"#, self.js_filename);
-        tracing::info!("write swagger index at path: {}", self.index_html_filepath());
+"#,
+            self.js_filename
+        );
+        tracing::info!(
+            "write swagger index at path: {}",
+            self.index_html_filepath()
+        );
         tokio::fs::write(&self.index_html_filepath(), index_html).await?;
         Ok(())
     }
 
     pub async fn rewrite_swagger_initializer_js(&self) -> anyhow::Result<()> {
-        let js = format!(r#"window.onload = function() {{
+        let js = format!(
+            r#"window.onload = function() {{
   //<editor-fold desc="Changeable Configuration Block">
 
   // the following lines will be replaced by docker/configurator, when it runs in a docker-container
@@ -97,7 +108,9 @@ impl InitSwagger {
   }});
 
   //</editor-fold>
-}};"#, &self.json_uri);
+}};"#,
+            &self.json_uri
+        );
         tracing::info!("write js initializer path: {}", self.js_filepath());
         tokio::fs::write(&self.js_filepath(), js).await?;
         Ok(())

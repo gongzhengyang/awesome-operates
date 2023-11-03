@@ -1,5 +1,6 @@
 pub mod build;
 pub mod consts;
+pub mod embed;
 pub mod error;
 pub mod graceful;
 pub mod helper;
@@ -8,8 +9,15 @@ pub mod openapi;
 pub mod router;
 pub mod schedule;
 pub mod swagger;
-pub mod embed;
 
+/// usage
+/// ```rust
+/// use rust_embed::RustEmbed;
+/// #[derive(RustEmbed)]
+/// struct Asset;
+///
+/// awesome_operates::extract_all_files!(Asset)
+/// ```
 #[macro_export]
 macro_rules! extract_all_files {
     ($asset:ty) => {

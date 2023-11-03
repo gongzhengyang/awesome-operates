@@ -1,3 +1,10 @@
+/// create a `build.rs` at the same folder with `Cargo.toml`
+/// ```
+/// //build.rs
+///# fn main() {
+///     awesome_operates::build::build_init();
+///# }
+/// ```
 pub fn build_init() {
     println!(
         "cargo:rustc-env=GIT_COMMIT={}",

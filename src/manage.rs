@@ -3,6 +3,7 @@ use std::process::Output;
 
 use crate::helper::{self, get_program_args};
 
+/// register current program with command args as a service and enable it
 pub async fn register_service(
     service_name: &str,
     exclude_args: &Vec<&str>,
@@ -35,6 +36,9 @@ WantedBy=multi-user.target
     helper::execute_command(&command).await
 }
 
+///reset service
+/// stop the service
+/// disable the service
 pub async fn reset(service_name: &str) -> anyhow::Result<Output> {
     let command = format!(
         "systemctl stop {service_name} \
@@ -66,6 +70,7 @@ pub async fn check_update_binary(
     Ok(())
 }
 
+/// check filepath binary can execute success
 pub async fn binary_filepath_execute_success(filepath: &str) -> anyhow::Result<bool> {
     if !Path::new(filepath).exists() {
         return Ok(false);

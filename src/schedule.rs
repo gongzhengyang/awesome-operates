@@ -3,6 +3,18 @@ use std::time::Duration;
 
 use tokio::time::MissedTickBehavior;
 
+/// run with interval as second as unit
+/// ```rust
+/// use std::sync::Once;
+///
+/// use awesome_operates::schedule::run_with_interval;
+///
+/// static START: Once = Once::new();
+///
+/// START.call_once(|| {
+///     run_with_interval(async { println!("aaa") }, 3);
+/// });
+/// ```
 pub fn run_with_interval<F, Res>(mut f: F, interval: u64)
 where
     F: 'static + FnMut() -> Res + Send,
