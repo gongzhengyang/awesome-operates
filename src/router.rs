@@ -5,7 +5,6 @@ use axum::{
     routing::MethodRouter,
     Router,
 };
-// use hyper::Method;
 use serde_json::Value;
 use tower::{Service, ServiceExt};
 
@@ -14,9 +13,9 @@ pub struct RequestMatcher {
     pub router: Router,
 }
 
-unsafe impl Sync for RequestMatcher {}
-
-unsafe impl Send for RequestMatcher {}
+// unsafe impl Sync for RequestMatcher {}
+//
+// unsafe impl Send for RequestMatcher {}
 
 impl RequestMatcher {
     pub fn from_route_methods(route_methods: Vec<(String, MethodRouter)>) -> Self {
@@ -72,7 +71,11 @@ pub async fn response_to_str(response: Response) -> String {
 }
 
 pub async fn response_to_json(response: Response) -> Value {
-    serde_json::from_slice(&hyper::body::to_bytes(response.into_body()).await.unwrap()).unwrap()
+    let bytes = &hyper::body::to_bytes(response.into_body()).await.unwrap();
+    serde_json::from_slice(bytes).unwrap_or_else(|_| {
+        tracing::error!("response parse into json error: {bytes:?}");
+        serde_json::json!({})
+    })
 }
 
 #[macro_export]
