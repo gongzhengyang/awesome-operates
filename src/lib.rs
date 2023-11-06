@@ -9,6 +9,7 @@ pub mod openapi;
 pub mod router;
 pub mod schedule;
 pub mod swagger;
+pub mod proxy;
 
 /// usage
 /// ```rust

@@ -28,6 +28,9 @@ pub fn openapi_route_handles(openapi: &Value, path_prefix: &str) -> Vec<(String,
     {
         let path = path.replace('{', ":").replace('}', "");
         for (method, detail) in operate.as_object().unwrap().iter() {
+            if !detail.is_object() {
+                continue;
+            }
             let summary = detail
                 .get("summary")
                 .unwrap_or(&default_json_value)
@@ -72,7 +75,7 @@ mod tests {
     use serde_json::Value;
 
     use crate::openapi::openapi_route_handles;
-    use crate::router::{response_to_json, RequestMatcher};
+    use crate::router::{RequestMatcher, response_to_json};
 
     use super::*;
 
@@ -140,7 +143,7 @@ mod tests {
                     .await
                     .unwrap(),
             )
-            .await;
+                .await;
             resp.as_object_mut().unwrap().remove("request");
             assert_eq!(expect, resp);
         }

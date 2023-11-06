@@ -14,7 +14,7 @@ use tower_http::services::ServeDir;
 ///     let app = Router::new()
 ///         .nest_service("/docs/", server_dir(extract_dir_path))
 ///         .nest_service("/swagger-api/", server_dir("swagger-files"));
-///     InitSwagger::new(extract_dir_path, "swagger-init.js", "swagger.html", "/swagger-api/api.json").build().await.unwrap();
+///     InitSwagger::new(extract_dir_path, "swagger-init.js", "swagger.html", "./swagger-api/api.json").build().await.unwrap();
 ///     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
 ///     axum::serve(listener, app).await.unwrap()
 /// # }
