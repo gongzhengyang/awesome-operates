@@ -2,7 +2,7 @@
 /// ```
 /// //build.rs
 ///# fn main() {
-///     awesome_operates::build::build_init();
+///#     awesome_operates::build::build_init();
 ///# }
 /// ```
 pub fn build_init() {

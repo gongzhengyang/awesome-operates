@@ -10,8 +10,8 @@ pub struct InitSwagger {
 /// ```rust,no_run
 /// use awesome_operates::swagger::InitSwagger;
 ///
-/// #[tokio::main]
-/// async fn main() -> anyhow::Result<()> {
+/// #[tokio::test]
+/// async fn openapi_write() -> anyhow::Result<()> {
 ///     awesome_operates::extract_all_files!(awesome_operates::embed::Asset);
 ///     InitSwagger::new(
 ///         "embed_files/swagger/",
@@ -24,8 +24,8 @@ pub struct InitSwagger {
 /// ```
 impl InitSwagger {
     pub fn new<T>(prefix: T, js_filename: T, index_html_filename: T, json_url: T) -> Self
-    where
-        T: Display,
+        where
+            T: Display,
     {
         InitSwagger {
             file_prefix: prefix.to_string(),

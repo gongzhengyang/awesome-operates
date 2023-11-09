@@ -15,11 +15,11 @@ pub mod swagger;
 /// use rust_embed::RustEmbed;
 ///
 /// #[derive(RustEmbed)]
-/// #[folder = "target"]
+/// #[folder = "embed_files"]
 /// struct Asset;
 ///
 /// async fn extract() -> anyhow::Result<()>{
-///     // awesome_operates::extract_all_files!(Asset);
+/// #   awesome_operates::extract_all_files!(Asset);
 ///     Ok(())
 /// }
 ///
