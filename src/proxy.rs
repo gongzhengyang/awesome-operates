@@ -46,7 +46,7 @@ pub trait HttpProxy: 'static {
             .await
             .context(RequestProxySnafu)?;
 
-        let status_code = resp.status().clone();
+        let status_code = resp.status();
         let headers = resp.headers().clone();
         tracing::debug!("proxy result {changed_uri:?} with resp: {status_code} {headers:?}");
         let body = resp.bytes().await.context(RequestBodyReadSnafu)?;

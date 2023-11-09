@@ -1,3 +1,8 @@
+use axum::body::Body;
+use axum::extract::Request;
+use axum::Json;
+use serde_json::Value;
+
 #[macro_export]
 macro_rules! method_exchange {
     ($method:expr, $path:expr, $resp:expr) => {
@@ -16,18 +21,58 @@ macro_rules! method_exchange {
 macro_rules! build_method_router {
     ($method:ident, $path:expr, $resp:expr) => {
         axum::routing::$method(|req: axum::extract::Request<axum::body::Body>| async move {
-                let mut resp = $resp;
-                let (parts, body) = req.into_parts();
-                let bytes = hyper::body::to_bytes(body).await.unwrap_or_default();
-                let json_body = serde_json::from_slice(&bytes).unwrap_or_else(|_| serde_json::json!({}));
-                resp["request"] = serde_json::json!({
-                    "method": parts.method.as_str(),
-                    "path": parts.uri.to_string(),
-                    // "headers": parts.headers,
-                    "body": json_body
-                });
-                axum::Json(resp)
-            },
-        )
+            $crate::router::handler::handle_openapi_request(req, $resp).await
+        })
     };
+}
+
+pub async fn handle_openapi_request(req: Request<Body>, mut resp: Value) -> Json<Value> {
+    let (parts, body) = req.into_parts();
+    let bytes = hyper::body::to_bytes(body).await.unwrap_or_default();
+    let json_body = serde_json::from_slice(&bytes).unwrap_or_else(|_| serde_json::json!({}));
+    resp["request"] = serde_json::json!({
+        "method": parts.method.as_str(),
+        "path": parts.uri.to_string(),
+        "body": json_body
+    });
+    resp["url_args"] = match_url_openapi_path(
+        resp["openapi_path"].as_str().unwrap_or_default(),
+        &parts.uri.to_string(),
+    );
+    resp["body_match_list"] = match_body_args(&resp["component"], &json_body);
+    Json(resp)
+}
+
+///  match "/device/:id/:id2/" with "/device/aaa/bbb/?sasajk" one by one
+/// into {"id": "aaa", "id2": "bbb"}
+pub fn match_url_openapi_path(openapi: &str, path: &str) -> Value {
+    let mut resp = serde_json::json!({});
+    if let Some(openapi) = openapi.split('?').next() {
+        if let Some(path) = path.split('?').next() {
+            let openapi_splits = openapi.split('/').collect::<Vec<&str>>();
+            let path_splits = path.split('/').collect::<Vec<&str>>();
+            for (i, s) in openapi_splits.iter().enumerate() {
+                if s.starts_with(':') {
+                    resp[s.replace(':', "")] = serde_json::json!(path_splits.get(i));
+                }
+            }
+        }
+    }
+    serde_json::json!(resp)
+}
+
+/// match body properties field by field with component with body
+pub fn match_body_args(component: &Value, body: &Value) -> Value {
+    let mut resp = vec![];
+    if let Some(properties) = component["properties"].as_object() {
+        for (key, value) in properties.iter() {
+            resp.push(serde_json::json!({
+                "key": key,
+                "value": body[key],
+                "description": value["description"],
+                "type": value["type"]
+            }))
+        }
+    }
+    serde_json::json!(resp)
 }

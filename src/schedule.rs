@@ -20,9 +20,9 @@ use tokio::time::MissedTickBehavior;
 /// });
 /// ```
 pub fn run_with_interval<F, Res>(mut f: F, interval: u64)
-    where
-        F: 'static + FnMut() -> Res + Send,
-        Res: 'static + Future<Output=()> + Send,
+where
+    F: 'static + FnMut() -> Res + Send,
+    Res: 'static + Future<Output = ()> + Send,
 {
     tokio::spawn(async move {
         sleep_until_next_generate(interval).await;
