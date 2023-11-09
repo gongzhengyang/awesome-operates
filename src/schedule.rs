@@ -4,15 +4,19 @@ use std::time::Duration;
 use tokio::time::MissedTickBehavior;
 
 /// run with interval as second as unit
-/// ```rust
+/// ```rust,no_run
 /// use std::sync::Once;
 ///
 /// use awesome_operates::schedule::run_with_interval;
 ///
 /// static START: Once = Once::new();
 ///
+/// async fn hello() {
+///     println!("aaa");
+/// }
+///
 /// START.call_once(|| {
-///     run_with_interval(async { println!("aaa") }, 3);
+///     run_with_interval(hello, 3);
 /// });
 /// ```
 pub fn run_with_interval<F, Res>(mut f: F, interval: u64)

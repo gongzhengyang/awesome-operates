@@ -1,10 +1,10 @@
 use axum::{
     http::StatusCode,
-    Json,
     response::{IntoResponse, Response},
+    Json,
 };
-use snafu::Location;
 use snafu::prelude::*;
+use snafu::Location;
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]

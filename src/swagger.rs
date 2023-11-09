@@ -7,9 +7,11 @@ pub struct InitSwagger {
     pub json_uri: String,
 }
 
-/// ```rust
+/// ```rust,no_run
 /// use awesome_operates::swagger::InitSwagger;
-/// async fn update_swagger() {
+///
+/// #[tokio::main]
+/// async fn main() -> anyhow::Result<()> {
 ///     awesome_operates::extract_all_files!(awesome_operates::embed::Asset);
 ///     InitSwagger::new(
 ///         "embed_files/swagger/",
@@ -17,6 +19,7 @@ pub struct InitSwagger {
 ///         "index.html",
 ///         "/swagger-json/api.json"
 ///     ).build().await.unwrap();
+///     Ok(())
 /// }
 /// ```
 impl InitSwagger {

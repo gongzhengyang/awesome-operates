@@ -4,7 +4,8 @@ use tokio::signal;
 /// ```rust
 /// use axum::Router;
 ///
-/// async fn main() {
+/// #[tokio::test]
+/// async fn running() {
 ///     let app = Router::new();
 ///
 ///     hyper::Server::bind(&"0.0.0.0:3000".parse().unwrap())

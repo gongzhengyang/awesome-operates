@@ -5,8 +5,8 @@ use axum::body::Body;
 use axum::extract::Request;
 use axum::http;
 use axum::response::{IntoResponse, Response};
-use http::Uri;
 use http::uri::{Parts, Scheme};
+use http::Uri;
 use snafu::ResultExt;
 use tower::make::Shared;
 
@@ -33,11 +33,12 @@ pub trait HttpProxy: 'static {
         parts.scheme = Some(Self::default_schema());
         parts.authority = Some(Self::target_addr().parse().unwrap());
         parts.path_and_query = uri.path_and_query().cloned();
-        tracing::debug!("receive proxy: {parts:?}");
+        tracing::debug!("receive proxy: {parts:?} headers: {:?}", req.headers());
         let changed_uri = Uri::from_parts(parts).context(UriFromPartsSnafu)?;
 
         let client = reqwest::Client::new();
-        let resp = client.request(req.method().clone(), changed_uri.to_string())
+        let resp = client
+            .request(req.method().clone(), changed_uri.to_string())
             .headers(req.headers().clone())
             .body(req.into_body())
             .timeout(Duration::from_secs(Self::proxy_timeout()))
@@ -47,6 +48,7 @@ pub trait HttpProxy: 'static {
 
         let status_code = resp.status().clone();
         let headers = resp.headers().clone();
+        tracing::debug!("proxy result {changed_uri:?} with resp: {status_code} {headers:?}");
         let body = resp.bytes().await.context(RequestBodyReadSnafu)?;
         let mut res = Body::from(body).into_response();
         *res.status_mut() = status_code;

@@ -5,19 +5,24 @@ pub mod error;
 pub mod graceful;
 pub mod helper;
 pub mod manage;
-pub mod openapi;
+pub mod proxy;
 pub mod router;
 pub mod schedule;
 pub mod swagger;
-pub mod proxy;
 
 /// usage
-/// ```rust
+/// ```
 /// use rust_embed::RustEmbed;
+///
 /// #[derive(RustEmbed)]
+/// #[folder = "target"]
 /// struct Asset;
 ///
-/// awesome_operates::extract_all_files!(Asset)
+/// async fn extract() -> anyhow::Result<()>{
+///     // awesome_operates::extract_all_files!(Asset);
+///     Ok(())
+/// }
+///
 /// ```
 #[macro_export]
 macro_rules! extract_all_files {

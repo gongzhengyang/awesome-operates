@@ -3,11 +3,15 @@ use std::process::{Output, Stdio};
 use regex::{Captures, Regex};
 use rust_decimal::prelude::FromPrimitive;
 use rust_decimal::Decimal;
+use serde_json::map::Iter;
+use serde_json::Value;
+use snafu::OptionExt;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use tokio::sync::mpsc::Sender;
 
 use crate::consts;
+use crate::error::{OptionNoneSnafu, Result};
 
 pub async fn execute_command(cmd: &str) -> anyhow::Result<Output> {
     tracing::info!("execute command `{cmd}`");
@@ -112,4 +116,11 @@ pub async fn add_execute_permission(filepath: &str) -> anyhow::Result<()> {
     #[cfg(unix)]
     execute_command(&format!("chmod a+x {}", filepath)).await?;
     Ok(())
+}
+
+pub fn iter_object<'a>(value: &'a Value, key: &'a str) -> Result<Iter<'a>> {
+    Ok(value.as_object().context(OptionNoneSnafu)?[key]
+        .as_object()
+        .context(OptionNoneSnafu)?
+        .iter())
 }
