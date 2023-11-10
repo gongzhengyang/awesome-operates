@@ -82,11 +82,13 @@ impl RequestMatcher {
                     openapi,
                     detail.pointer("/requestBody/content/application~1json/schema/$ref"),
                 );
+                let path_with_prefix = format!("{}{path}", path_prefix.trim_end_matches('/'));
                 let resp = serde_json::json!({
                     "openapi_path": path,
                     "method": method,
                     "summary": summary,
                     "component": component,
+                    "path_with_prefix": path_with_prefix,
                 });
                 tracing::debug!(
                     r#"read route handle
@@ -97,10 +99,7 @@ impl RequestMatcher {
                     component[{component:?}]
                     resp[{resp}]"#
                 );
-                route_handlers.push((
-                    format!("{}{path}", path_prefix.trim_end_matches('/')),
-                    method_exchange!(method, &path, resp),
-                ));
+                route_handlers.push((path_with_prefix, method_exchange!(method, &path, resp)));
             }
         }
         Ok(route_handlers)
@@ -124,13 +123,17 @@ impl RequestMatcher {
         &mut self,
         method: Method,
         path: &str,
-        body: Option<Value>,
+        body: Option<Body>,
     ) -> anyhow::Result<Response> {
         // this line is very important
         let method = method.as_str().to_uppercase().parse().unwrap();
-        tracing::debug!("match request [method]{} [path]:{} ", method, path);
+        tracing::debug!(
+            "match request [method]{} [path]:{} body:[{body:?}] ",
+            method,
+            path
+        );
         let request = Self::build_request(method, path, body);
-        tracing::debug!("match request before{request:?}");
+        tracing::debug!("match request before {request:?}");
         let response = ServiceExt::<Request<Body>>::ready(&mut self.router)
             .await?
             .call(request)
@@ -143,19 +146,15 @@ impl RequestMatcher {
         &mut self,
         method: Method,
         path: &str,
-        body: Option<Value>,
+        body: Option<Body>,
     ) -> anyhow::Result<Value> {
         let response = self.match_request_to_response(method, path, body).await?;
         let bytes = &hyper::body::to_bytes(response.into_body()).await?;
         Ok(serde_json::from_slice(bytes)?)
     }
 
-    pub fn build_request(method: Method, path: &str, body: Option<Value>) -> Request<Body> {
-        let body = if let Some(body) = body {
-            Body::from(serde_json::to_vec(&body).unwrap())
-        } else {
-            Body::empty()
-        };
+    pub fn build_request(method: Method, path: &str, body: Option<Body>) -> Request<Body> {
+        let body = body.unwrap_or_default();
         Request::builder()
             .method(method)
             .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())

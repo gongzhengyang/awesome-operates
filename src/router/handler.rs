@@ -29,20 +29,25 @@ macro_rules! build_method_router {
 pub async fn handle_openapi_request(req: Request<Body>, mut resp: Value) -> Json<Value> {
     let (parts, body) = req.into_parts();
     let bytes = hyper::body::to_bytes(body).await.unwrap_or_default();
-    let json_body = serde_json::from_slice(&bytes).unwrap_or_else(|_| serde_json::json!({}));
+    tracing::debug!("handle openapi request receive body len {}", bytes.len());
+    let json_body = serde_json::from_slice(&bytes).unwrap_or_else(|_| {
+        tracing::error!("body transfer into json failed for {bytes:?}");
+        serde_json::json!({})
+    });
     resp["request"] = serde_json::json!({
         "method": parts.method.as_str(),
         "path": parts.uri.to_string(),
         "body": json_body
     });
     resp["url_args"] = match_url_openapi_path(
-        resp["openapi_path"].as_str().unwrap_or_default(),
+        resp["path_with_prefix"].as_str().unwrap_or_default(),
         &parts.uri.to_string(),
     );
     resp["body_match_list"] = match_body_args(&resp["component"], &json_body);
     Json(resp)
 }
 
+/// need to remove prefix in true path request
 ///  match "/device/:id/:id2/" with "/device/aaa/bbb/?sasajk" one by one
 /// into {"id": "aaa", "id2": "bbb"}
 pub fn match_url_openapi_path(openapi: &str, path: &str) -> Value {
@@ -63,15 +68,19 @@ pub fn match_url_openapi_path(openapi: &str, path: &str) -> Value {
 
 /// match body properties field by field with component with body
 pub fn match_body_args(component: &Value, body: &Value) -> Value {
+    tracing::debug!("match body with {body}");
     let mut resp = vec![];
     if let Some(properties) = component["properties"].as_object() {
         for (key, value) in properties.iter() {
-            resp.push(serde_json::json!({
-                "key": key,
-                "value": body[key],
-                "description": value["description"],
-                "type": value["type"]
-            }))
+            let body_value = &body[key];
+            if !body_value.is_null() {
+                resp.push(serde_json::json!({
+                    "key": key,
+                    "value": body_value,
+                    "description": value["description"],
+                    "type": value["type"]
+                }))
+            }
         }
     }
     serde_json::json!(resp)

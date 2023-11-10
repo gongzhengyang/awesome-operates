@@ -1,3 +1,5 @@
+use axum::body::Body;
+
 use super::*;
 
 fn get_request_matcher() -> (RequestMatcher, Value) {
@@ -21,6 +23,7 @@ async fn test_basic_openapi() {
             "openapi_path": "/device/",
             "method": "get",
             "url_args": {},
+            "path_with_prefix": "/device/",
             "body_match_list": [],
             "summary": "查询设备状态数据 (最多保存历史1000条)",
             "component": RequestMatcher::api_component(&openapi, Some(&serde_json::json!("")))
@@ -49,6 +52,36 @@ async fn test_fetch_url_openapi() {
         serde_json::json!({
             "openapi_path": "/device/:id/:id2/",
             "method": "get",
+            "path_with_prefix": "/device/:id/:id2/",
+            "body_match_list": [],
+            "summary": "查询设备状态数据 (最多保存历史1000条) id id",
+            "component": RequestMatcher::api_component(&openapi, Some(&serde_json::json!("")))
+        })
+    );
+}
+
+#[tokio::test]
+async fn test_fetch_url_id_openapi() {
+    let (mut matcher, openapi) = get_request_matcher();
+    let mut resp = matcher
+        .match_request_to_json_response(Method::GET, "/device/22/33/", None)
+        .await
+        .unwrap();
+    let url_args = resp.as_object_mut().unwrap().remove("url_args").unwrap();
+    assert_eq!(
+        url_args,
+        serde_json::json!({
+            "id": "22",
+            "id2": "33"
+        })
+    );
+    resp.as_object_mut().unwrap().remove("request");
+    assert_eq!(
+        resp,
+        serde_json::json!({
+            "openapi_path": "/device/:id/:id2/",
+            "path_with_prefix": "/device/:id/:id2/",
+            "method": "get",
             "body_match_list": [],
             "summary": "查询设备状态数据 (最多保存历史1000条) id id",
             "component": RequestMatcher::api_component(&openapi, Some(&serde_json::json!("")))
@@ -65,6 +98,7 @@ async fn test_request_body_openapi() {
         "versions": [1, 2]
     });
     let (mut matcher, openapi) = get_request_matcher();
+    let body = Body::from(format!("{body}"));
     let mut resp = matcher
         .match_request_to_json_response(Method::PUT, "/snmpconfig/", Some(body))
         .await
@@ -74,6 +108,7 @@ async fn test_request_body_openapi() {
         resp,
         serde_json::json!({
               "openapi_path": "/snmpconfig/",
+               "path_with_prefix": "/snmpconfig/",
               "method": "put",
               "url_args": {},
               "summary": "[snmp] 配置snmp",
