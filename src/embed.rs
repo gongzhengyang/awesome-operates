@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use async_compression::{tokio::write::BrotliEncoder, Level};
 use rust_embed::RustEmbed;
 use tokio::io::AsyncWriteExt;
@@ -47,20 +45,19 @@ pub async fn pre_brotli_compress_dir(dir: &str) -> anyhow::Result<()> {
     for entry in walkdir::WalkDir::new(dir)
         .into_iter()
         .filter_map(|e| e.ok())
+        .filter(|e| {
+            e.path().is_file()
+                && !e.path().extension().unwrap_or_default().eq("br")
+        })
     {
-        if entry.path().is_file() {
-            brotli_compress(entry.path()).await?;
-        }
+        let path = entry.path();
+        tracing::debug!("pre brotli compress {}", path.display());
+        let data = tokio::fs::read(path).await?;
+        let mut encoder = BrotliEncoder::with_quality(Vec::new(), Level::Best);
+        encoder.write_all(&data).await?;
+        encoder.shutdown().await?;
+        let compressed = encoder.into_inner();
+        tokio::fs::write(format!("{}.br", path.display()), compressed).await?;
     }
-    Ok(())
-}
-
-pub async fn brotli_compress(path: &Path) -> anyhow::Result<()> {
-    let data = tokio::fs::read(path).await?;
-    let mut encoder = BrotliEncoder::with_quality(Vec::new(), Level::Precise(4));
-    encoder.write_all(&data).await?;
-    encoder.shutdown().await?;
-    let compressed = encoder.into_inner();
-    tokio::fs::write(format!("{}.br", path.display()), compressed).await?;
     Ok(())
 }

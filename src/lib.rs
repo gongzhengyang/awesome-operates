@@ -3,12 +3,12 @@ pub mod consts;
 pub mod embed;
 pub mod error;
 pub mod graceful;
-pub mod helper;
 pub mod manage;
 pub mod proxy;
 pub mod router;
 pub mod schedule;
 pub mod swagger;
+pub mod helper;
 
 /// usage
 /// ```
