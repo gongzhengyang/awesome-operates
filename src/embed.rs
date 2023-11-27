@@ -6,31 +6,54 @@ use tower_http::services::ServeDir;
 /// used with swagger openapi
 /// eg: I have a swagger.json at path swagger-files/api.json, so I can start a http service for generate swagger
 /// ```rust,no_run
-/// use awesome_operates::embed::server_dir;
+/// use awesome_operates::embed::{server_dir, EXTRACT_DIR_PATH};
 /// use awesome_operates::swagger::InitSwagger;
-/// use axum::Router;
+/// use axum::{Router, Extension, routing::get, Json, response::{Response, IntoResponse}};
 /// use tower::ServiceBuilder;
 /// use tower_http::compression::CompressionLayer;
+/// use aide::openapi::OpenApi;
+/// use aide::transform::TransformOpenApi;
+/// use std::sync::Arc;
+///
+/// async fn serve_docs(Extension(api): Extension<Arc<OpenApi>>) -> Response {
+///     Json(serde_json::json!(*api)).into_response()
+/// }
+///
+/// fn api_docs(api: TransformOpenApi) -> TransformOpenApi {
+///     api.title("数据采集")
+/// }
 ///
 /// #[tokio::test]
 /// async fn server() -> anyhow::Result<()> {
+///     aide::gen::on_error(|error| {
+///         println!("{error}")
+///     });
+///     aide::gen::extract_schemas(true);
+///     let mut api = OpenApi::default();
+///
 ///     awesome_operates::extract_all_files!(awesome_operates::embed::Asset);
-///     let extract_dir_path = "embed_files/swagger";
+///     InitSwagger::new(EXTRACT_DIR_PATH, "swagger-init.js", "swagger.html", "../api.json").build().await.unwrap();
 ///     let app = Router::new()
-///         .nest_service("/docs/", server_dir(extract_dir_path).await.unwrap())
-///         .nest_service("/swagger-api/", server_dir("swagger-files").await.unwrap())
-///         .layer(ServiceBuilder::new().layer(CompressionLayer::new()));
-///     InitSwagger::new(extract_dir_path, "swagger-init.js", "swagger.html", "./swagger-api/api.json").build().await.unwrap();
+///         // .api_route("/example", post_with(handlers::example, handlers::example_docs))
+///         .nest_service("/docs/", server_dir(EXTRACT_DIR_PATH).await.unwrap())
+///         .route("/api.json", get(serve_docs))
+///         .finish_api_with(&mut api, api_docs)
+///         .layer(ServiceBuilder::new()
+///                 .layer(CompressionLayer::new())
+///                 .layer(Extension(Arc::new(api))));
+///
 ///     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
 /// #    axum::serve(listener, app).await.unwrap();
 ///     Ok(())
 ///  }
 /// ```
-/// finally, you can visit at browser at http://127.0.0.1:3000/docs/swagger.html for your swagger
+/// finally, you can visit at browser at http://127.0.0.1:3000/docs/ for your swagger
 #[derive(RustEmbed)]
 #[prefix = "embed_files/"]
 #[folder = "src/embed_files/"]
 pub struct Asset;
+
+pub const EXTRACT_DIR_PATH: &str = "embed_files/swagger";
 
 pub async fn server_dir(dir_path: &str) -> anyhow::Result<ServeDir> {
     pre_brotli_compress_dir(dir_path).await?;
