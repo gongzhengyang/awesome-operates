@@ -45,10 +45,7 @@ pub async fn pre_brotli_compress_dir(dir: &str) -> anyhow::Result<()> {
     for entry in walkdir::WalkDir::new(dir)
         .into_iter()
         .filter_map(|e| e.ok())
-        .filter(|e| {
-            e.path().is_file()
-                && !e.path().extension().unwrap_or_default().eq("br")
-        })
+        .filter(|e| e.path().is_file() && !e.path().extension().unwrap_or_default().eq("br"))
     {
         let path = entry.path();
         tracing::debug!("pre brotli compress {}", path.display());

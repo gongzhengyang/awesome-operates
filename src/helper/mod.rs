@@ -1,8 +1,6 @@
 use regex::{Captures, Regex};
 
-pub use execute::{
-    execute_command, execute_command_with_args_sender,
-};
+pub use execute::{execute_command, execute_command_with_args_sender};
 pub use format::{
     decimal_with_four, decimal_with_two, default_formatted_now, formatted_now, human_bytes,
 };
@@ -46,5 +44,3 @@ pub async fn add_execute_permission(filepath: &str) -> anyhow::Result<()> {
     execute_command(&format!("chmod a+x {}", filepath)).await?;
     Ok(())
 }
-
-

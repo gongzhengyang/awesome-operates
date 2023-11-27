@@ -28,7 +28,10 @@ macro_rules! build_method_router {
 
 pub async fn handle_openapi_request(req: Request<Body>, mut resp: Value) -> Json<Value> {
     let (parts, body) = req.into_parts();
-    let bytes = hyper::body::to_bytes(body).await.unwrap_or_default();
+    let bytes = http_body_util::BodyExt::collect(body)
+        .await
+        .unwrap()
+        .to_bytes();
     tracing::debug!("handle openapi request receive body len {}", bytes.len());
     let json_body = serde_json::from_slice(&bytes).unwrap_or_else(|_| {
         tracing::error!("body transfer into json failed for {bytes:?}");

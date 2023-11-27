@@ -149,8 +149,10 @@ impl RequestMatcher {
         body: Option<Body>,
     ) -> anyhow::Result<Value> {
         let response = self.match_request_to_response(method, path, body).await?;
-        let bytes = &hyper::body::to_bytes(response.into_body()).await?;
-        Ok(serde_json::from_slice(bytes)?)
+        let bytes = http_body_util::BodyExt::collect(response.into_body())
+            .await?
+            .to_bytes();
+        Ok(serde_json::from_slice(&bytes)?)
     }
 
     pub fn build_request(method: Method, path: &str, body: Option<Body>) -> Request<Body> {
