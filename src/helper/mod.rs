@@ -5,10 +5,14 @@ pub use format::{
     decimal_with_four, decimal_with_two, default_formatted_now, formatted_now, human_bytes,
 };
 pub use iter::iter_object;
+pub use network::{
+    get_virtual_interfaces, sync_get_virtual_interfaces,
+};
 
 mod execute;
 mod format;
 mod iter;
+mod network;
 
 pub fn get_program_args(excludes: &Vec<&str>) -> Vec<String> {
     let mut args = std::env::args().collect::<Vec<String>>();
