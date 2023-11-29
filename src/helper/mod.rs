@@ -2,12 +2,11 @@ use regex::{Captures, Regex};
 
 pub use execute::{execute_command, execute_command_with_args_sender};
 pub use format::{
-    decimal_with_four, decimal_with_two, default_formatted_now, formatted_now, human_bytes,
+    decimal_with_four, decimal_with_two, default_formatted_now, format_from_timestamp,
+    formatted_now, human_bytes,
 };
 pub use iter::iter_object;
-pub use network::{
-    get_virtual_interfaces, sync_get_virtual_interfaces,
-};
+pub use network::{get_virtual_interfaces, sync_get_virtual_interfaces};
 
 mod execute;
 mod format;

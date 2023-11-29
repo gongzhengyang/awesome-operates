@@ -1,3 +1,4 @@
+use chrono::TimeZone;
 use rust_decimal::prelude::FromPrimitive;
 use rust_decimal::Decimal;
 
@@ -9,6 +10,14 @@ pub fn default_formatted_now() -> String {
 
 pub fn formatted_now(fmt: &str) -> String {
     chrono::Local::now().format(fmt).to_string()
+}
+
+pub fn format_from_timestamp(value: u64) -> String {
+    chrono::Utc
+        .timestamp_opt(value as i64, 0)
+        .unwrap()
+        .format(consts::DEFAULT_TIME_FORMAT)
+        .to_string()
 }
 
 #[inline]
