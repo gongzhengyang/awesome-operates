@@ -53,7 +53,8 @@ use tower_http::services::ServeDir;
 #[folder = "src/embed_files/"]
 pub struct Asset;
 
-pub const EXTRACT_DIR_PATH: &str = "embed_files/swagger";
+pub const EXTRACT_SWAGGER_DIR_PATH: &str = "embed_files/swagger";
+pub const EXTRACT_DIR_PATH: &str = "embed_files";
 
 pub async fn server_dir(dir_path: &str) -> anyhow::Result<ServeDir> {
     pre_brotli_compress_dir(dir_path).await?;

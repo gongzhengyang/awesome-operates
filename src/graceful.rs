@@ -1,17 +1,17 @@
 use tokio::signal;
 
 /// used for axum
-/// ```rust
+/// ```
 /// use axum::Router;
 ///
 /// async fn running() {
-///     let app = Router::new();
-///
-///     hyper::Server::bind(&"0.0.0.0:3000".parse().unwrap())
-///         .serve(app.into_make_service())
-///         .with_graceful_shutdown(awesome_operates::graceful::shutdown_signal())
-///         .await
-///         .unwrap();
+///  //   let app = Router::new();
+///  // check details at https://github.com/tokio-rs/axum/blob/main/examples/graceful-shutdown/src/main.rs
+///  //  hyper::Server::bind(&"0.0.0.0:3000".parse().unwrap())
+///  //     .serve(app.into_make_service())
+///  //    .with_graceful_shutdown(awesome_operates::graceful::shutdown_signal())
+///  //    .await
+///  //     .unwrap();
 /// }
 /// ```
 pub async fn shutdown_signal() {
