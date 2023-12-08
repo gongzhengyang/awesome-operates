@@ -1,17 +1,29 @@
-use regex::{Captures, Regex};
+use cfg_if::cfg_if;
 
-pub use execute::{execute_command, execute_command_with_args_sender};
+pub use execute::{execute_command, execute_command_with_args_sender, kill_process_by_pid};
 pub use format::{
     decimal_with_four, decimal_with_two, default_formatted_now, format_from_timestamp,
     formatted_now, human_bytes,
 };
 pub use iter::iter_object;
 pub use network::{get_virtual_interfaces, sync_get_virtual_interfaces};
+pub use version::{calculate_agent_version, get_binary_file_version, get_pkg_version};
 
 mod execute;
 mod format;
 mod iter;
 mod network;
+mod version;
+
+cfg_if! {
+    if #[cfg(unix)] {
+        mod unix;
+        pub use unix::*;
+    } else {
+        mod windows;
+        pub use windows::*;
+    }
+}
 
 pub fn get_program_args(excludes: &Vec<&str>) -> Vec<String> {
     let mut args = std::env::args().collect::<Vec<String>>();
@@ -29,21 +41,22 @@ pub fn get_program_args(excludes: &Vec<&str>) -> Vec<String> {
         .collect::<Vec<String>>()
 }
 
-pub fn get_pkg_version() -> &'static str {
-    env!("CARGO_PKG_VERSION")
-}
-
-pub fn calculate_agent_version(version: &str) -> u32 {
-    let re = Regex::new(r"(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)").unwrap();
-    let value = |x: &Captures, field: &str| x.name(field).unwrap().as_str().parse::<u8>().unwrap();
-    let (major, minor, patch) = re.captures(version).map_or((0, 0, 0), |c| {
-        (value(&c, "major"), value(&c, "minor"), value(&c, "patch"))
-    });
-    (major as u32) << 16 | (minor as u32) << 8 | patch as u32
-}
-
 pub async fn add_execute_permission(filepath: &str) -> anyhow::Result<()> {
     #[cfg(unix)]
     execute_command(&format!("chmod a+x {}", filepath)).await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn calculate_version() {
+        assert_eq!(
+            calculate_agent_version("agent-10.22.33.exe"),
+            10 << 16 | 22 << 8 | 33
+        );
+        assert_eq!(calculate_agent_version("agent-1.2.3"), 1 << 16 | 2 << 8 | 3);
+    }
 }

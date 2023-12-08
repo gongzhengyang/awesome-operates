@@ -1,5 +1,7 @@
 use std::process::{Output, Stdio};
 
+use cfg_if::cfg_if;
+use serde::Serialize;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use tokio::sync::mpsc::Sender;
@@ -39,4 +41,41 @@ pub async fn execute_command_with_args_sender(cmd: &str, args: Vec<String>, tx: 
     {
         tx.send(line).await.unwrap();
     }
+}
+
+/// ```rust
+/// use awesome_operates::helper::kill_process_by_pid;
+/// # async {
+/// #     kill_process_by_pid(99999999).await;
+/// #     kill_process_by_pid(Some(9999999999)).await;
+/// #     // this will has no use
+/// #     kill_process_by_pid(None::<u32>).await;
+/// # }
+/// ```
+pub async fn kill_process_by_pid<T>(pid: T)
+where
+    T: Serialize,
+{
+    let value = serde_json::json!(pid);
+    if value.as_u64().is_none() {
+        return;
+    }
+    let pid = value.to_string();
+    let pid_str = pid.as_str();
+    cfg_if! {
+        if #[cfg(unix)] {
+           let status = tokio::process::Command::new("kill")
+            .args(["-9", pid_str])
+            .status()
+            .await
+            .unwrap();
+        } else {
+            let status = tokio::process::Command::new("taskkill")
+                .args([r"/T", r"/F", r"/PID", pid_str])
+                .status()
+                .await
+                .unwrap();
+        }
+    }
+    tracing::info!("kill process {pid_str} with exit status {status:?}");
 }

@@ -41,6 +41,18 @@ pub enum AppError {
         location: Location,
         source: reqwest::Error,
     },
+
+    #[snafu(display("binary cannot be execute for filepath {}", filepath))]
+    BinaryCannotBeExecute {
+        location: Location,
+        filepath: String,
+    },
+
+    #[snafu(display("common io error {}", source))]
+    CommonIo {
+        location: Location,
+        source: std::io::Error,
+    },
 }
 
 impl IntoResponse for AppError {
