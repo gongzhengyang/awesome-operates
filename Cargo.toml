@@ -12,7 +12,7 @@ repository = "https://github.com/gongzhengyang/awesome-operates"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-aide = { git = "https://github.com/tamasfe/aide.git" }
+aide = "0.13"
 anyhow = "1"
 async-compression = { version = "0.4", features = ["tokio"] }
 async-trait = "0.1"

@@ -24,8 +24,8 @@ pub struct InitSwagger {
 /// ```
 impl InitSwagger {
     pub fn new<T>(prefix: T, js_filename: T, index_html_filename: T, json_url: T) -> Self
-    where
-        T: Display,
+        where
+            T: Display,
     {
         InitSwagger {
             file_prefix: prefix.to_string(),
@@ -96,7 +96,7 @@ impl InitSwagger {
   window.ui = SwaggerUIBundle({{
     url: "{}",
     dom_id: '#swagger-ui',
-    deepLinking: false,
+    deepLinking: true,
     presets: [
       SwaggerUIBundle.presets.apis,
       SwaggerUIStandalonePreset
