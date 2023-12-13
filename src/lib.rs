@@ -28,7 +28,7 @@ pub mod swagger;
 macro_rules! extract_all_files {
     ($asset:ty) => {
         for file in <$asset>::iter() {
-            tracing::info!("extract {}", file.as_ref());
+            tracing::debug!("extract {}", file.as_ref());
             let filepath = file.as_ref();
             if let Some(parent) = std::path::Path::new(filepath).parent() {
                 if !parent.exists() {
@@ -37,6 +37,7 @@ macro_rules! extract_all_files {
             }
             let file = <$asset>::get(filepath).unwrap().data;
             tokio::fs::write(filepath, file).await?;
+            #[cfg(unix)]
             $crate::helper::add_execute_permission(filepath).await?;
         }
     };

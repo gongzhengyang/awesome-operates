@@ -13,7 +13,7 @@ pub async fn register_service(
     let work_directory = std::env::current_dir()?;
     let service_config = format!(
         r#"[Unit]
-Description=sys layer agent service
+Description= agent service
 After=network.target
 
 [Service]
@@ -75,6 +75,7 @@ pub async fn binary_filepath_execute_success(filepath: &str) -> anyhow::Result<b
     if !Path::new(filepath).exists() {
         return Ok(false);
     }
+    #[cfg(unix)]
     helper::add_execute_permission(filepath).await?;
     Ok(helper::execute_command(&format!("{filepath} --version"))
         .await?

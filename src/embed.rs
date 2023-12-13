@@ -57,7 +57,12 @@ pub const EXTRACT_SWAGGER_DIR_PATH: &str = "embed_files/swagger";
 pub const EXTRACT_DIR_PATH: &str = "embed_files";
 
 pub async fn server_dir(dir_path: &str) -> anyhow::Result<ServeDir> {
-    pre_brotli_compress_dir(dir_path).await?;
+    let dir_path_clone = dir_path.to_owned();
+    tokio::task::spawn_blocking(move || {
+        tokio::runtime::Handle::current().block_on(async move {
+            pre_brotli_compress_dir(&dir_path_clone).await.unwrap();
+        });
+    });
     Ok(ServeDir::new(dir_path)
         .precompressed_br()
         .precompressed_deflate()
@@ -65,6 +70,15 @@ pub async fn server_dir(dir_path: &str) -> anyhow::Result<ServeDir> {
         .precompressed_zstd())
 }
 
+/// very time consuming operate, maybe even minitues
+/// use `tokio::spawn`
+/// ```rust
+/// tokio::task::spawn_blocking(move || {
+///         tokio::runtime::Handle::current().block_on(async move {
+///             pre_brotli_compress_dir("").await.unwrap();
+///         });
+///     });
+/// ```
 pub async fn pre_brotli_compress_dir(dir: &str) -> anyhow::Result<()> {
     for entry in walkdir::WalkDir::new(dir)
         .into_iter()
@@ -80,5 +94,6 @@ pub async fn pre_brotli_compress_dir(dir: &str) -> anyhow::Result<()> {
         let compressed = encoder.into_inner();
         tokio::fs::write(format!("{}.br", path.display()), compressed).await?;
     }
+    tracing::info!("pre brotli compress for {dir} over");
     Ok(())
 }

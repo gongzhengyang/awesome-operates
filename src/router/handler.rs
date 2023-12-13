@@ -34,7 +34,7 @@ pub async fn handle_openapi_request(req: Request<Body>, mut resp: Value) -> Json
         .to_bytes();
     tracing::debug!("handle openapi request receive body len {}", bytes.len());
     let json_body = serde_json::from_slice(&bytes).unwrap_or_else(|_| {
-        tracing::error!("body transfer into json failed for {bytes:?}");
+        tracing::info!("body transfer is not json for {bytes:?}");
         serde_json::json!({})
     });
     resp["request"] = serde_json::json!({
