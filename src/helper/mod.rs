@@ -43,9 +43,7 @@ pub fn get_program_args(excludes: &Vec<&str>) -> Vec<String> {
 
 #[cfg(unix)]
 pub async fn add_execute_permission(filepath: &str) -> anyhow::Result<()> {
-    use std::os::unix::fs::PermissionsExt;
-    let mut permissions = tokio::fs::metadata(filepath).await?.permissions();
-    permissions.set_mode(0o777);
+    execute_command(&format!("chmod a+x {}", filepath)).await?;
     Ok(())
 }
 
