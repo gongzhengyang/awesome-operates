@@ -1,4 +1,3 @@
-use async_compression::{tokio::write::BrotliEncoder, Level};
 use rust_embed::RustEmbed;
 use tokio::io::AsyncWriteExt;
 use tower_http::services::ServeDir;
@@ -60,7 +59,7 @@ pub async fn server_dir(dir_path: &str) -> anyhow::Result<ServeDir> {
     let dir_path_clone = dir_path.to_owned();
     tokio::task::spawn_blocking(move || {
         tokio::runtime::Handle::current().block_on(async move {
-            pre_brotli_compress_dir(&dir_path_clone).await.unwrap();
+            pre_compress_dir(&dir_path_clone).await.unwrap();
         });
     });
     Ok(ServeDir::new(dir_path)
@@ -70,29 +69,50 @@ pub async fn server_dir(dir_path: &str) -> anyhow::Result<ServeDir> {
         .precompressed_zstd())
 }
 
+/// only used for `pre_compress_dir`
+macro_rules! compress {
+    ($encoder:ident, $extension:expr, $data:expr, $path:expr) => {
+        let mut encoder = async_compression::tokio::write::$encoder::with_quality(
+            Vec::new(),
+            async_compression::Level::Best,
+        );
+        encoder.write_all(&$data).await?;
+        encoder.shutdown().await?;
+        let compressed = encoder.into_inner();
+        tokio::fs::write(format!("{}.{}", $path.display(), $extension), compressed).await?;
+    };
+}
+
 /// very time consuming operate, maybe even minitues
 /// use `tokio::spawn`
 /// ```rust
-/// tokio::task::spawn_blocking(move || {
+/// use awesome_operates::embed::pre_compress_dir;
+///
+/// #[tokio::test]
+/// async fn compress_all() {
+///     tokio::task::spawn_blocking(move || {
 ///         tokio::runtime::Handle::current().block_on(async move {
-///             pre_brotli_compress_dir("").await.unwrap();
+///             pre_compress_dir("").await.unwrap();
 ///         });
 ///     });
+/// }
 /// ```
-pub async fn pre_brotli_compress_dir(dir: &str) -> anyhow::Result<()> {
+pub async fn pre_compress_dir(dir: &str) -> anyhow::Result<()> {
     for entry in walkdir::WalkDir::new(dir)
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| e.path().is_file() && !e.path().extension().unwrap_or_default().eq("br"))
     {
         let path = entry.path();
-        tracing::debug!("pre brotli compress {}", path.display());
+        tracing::debug!("pre compress {}", path.display());
         let data = tokio::fs::read(path).await?;
-        let mut encoder = BrotliEncoder::with_quality(Vec::new(), Level::Best);
-        encoder.write_all(&data).await?;
-        encoder.shutdown().await?;
-        let compressed = encoder.into_inner();
-        tokio::fs::write(format!("{}.br", path.display()), compressed).await?;
+        compress!(BrotliEncoder, "br", data, path);
+        compress!(GzipEncoder, "gz", data, path);
+        // let mut encoder = BrotliEncoder::with_quality(Vec::new(), Level::Best);
+        // encoder.write_all(&data).await?;
+        // encoder.shutdown().await?;
+        // let compressed = encoder.into_inner();
+        // tokio::fs::write(format!("{}.br", path.display()), compressed).await?;
     }
     tracing::info!("pre brotli compress for {dir} over");
     Ok(())

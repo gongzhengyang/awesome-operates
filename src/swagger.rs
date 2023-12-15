@@ -7,6 +7,11 @@ pub struct InitSwagger {
     pub json_uri: String,
 }
 
+/// generate swagger *.html and *initializer.js file with prefix
+/// the `json_url` just as a value in *initializer.js file
+/// eg.
+/// this will generate embed_files/swagger/index.html and
+/// embed_files/swagger/swagger-initializer.js(/swagger-json/api.json will be the key url value)
 /// ```rust,no_run
 /// use awesome_operates::swagger::InitSwagger;
 ///

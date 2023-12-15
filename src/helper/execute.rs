@@ -46,11 +46,11 @@ pub async fn execute_command_with_args_sender(cmd: &str, args: Vec<String>, tx: 
 /// ```rust
 /// use awesome_operates::helper::kill_process_by_pid;
 /// # async {
-/// #     kill_process_by_pid(99999999).await;
-/// #     kill_process_by_pid(Some(9999999999)).await;
+/// #     kill_process_by_pid(999990).await;
+/// #     kill_process_by_pid(Some(99999999)).await;
 /// #     // this will has no use
 /// #     kill_process_by_pid(None::<u32>).await;
-/// # }
+/// # };
 /// ```
 pub async fn kill_process_by_pid<T>(pid: T)
 where

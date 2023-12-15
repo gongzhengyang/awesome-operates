@@ -14,9 +14,10 @@ repository = "https://github.com/gongzhengyang/awesome-operates"
 [dependencies]
 aide = "0.13"
 anyhow = "1"
+futures-io = "0.3"
 async-compression = { version = "0.4", features = ["tokio"] }
 async-trait = "0.1"
-axum = "0.7.1"
+axum = "0.7.2"
 build-data = "0.1"
 chrono = "0.4"
 http = "1"
