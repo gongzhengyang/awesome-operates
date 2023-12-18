@@ -1,3 +1,7 @@
+#[cfg(unix)]
+use std::os::unix::fs::MetadataExt;
+use std::path::Path;
+
 use rust_embed::RustEmbed;
 use tokio::io::AsyncWriteExt;
 use tower_http::services::ServeDir;
@@ -59,7 +63,7 @@ pub async fn server_dir(dir_path: &str) -> anyhow::Result<ServeDir> {
     let dir_path_clone = dir_path.to_owned();
     tokio::task::spawn_blocking(move || {
         tokio::runtime::Handle::current().block_on(async move {
-            pre_compress_dir(&dir_path_clone).await.unwrap();
+            pre_compress_dir(&dir_path_clone).await;
         });
     });
     Ok(ServeDir::new(dir_path)
@@ -92,28 +96,33 @@ macro_rules! compress {
 /// async fn compress_all() {
 ///     tokio::task::spawn_blocking(move || {
 ///         tokio::runtime::Handle::current().block_on(async move {
-///             pre_compress_dir("").await.unwrap();
+///             pre_compress_dir("").await;
 ///         });
 ///     });
 /// }
 /// ```
-pub async fn pre_compress_dir(dir: &str) -> anyhow::Result<()> {
+pub async fn pre_compress_dir(dir: &str) {
     for entry in walkdir::WalkDir::new(dir)
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| e.path().is_file() && !e.path().extension().unwrap_or_default().eq("br"))
     {
-        let path = entry.path();
-        tracing::debug!("pre compress {}", path.display());
-        let data = tokio::fs::read(path).await?;
-        compress!(BrotliEncoder, "br", data, path);
-        compress!(GzipEncoder, "gz", data, path);
-        // let mut encoder = BrotliEncoder::with_quality(Vec::new(), Level::Best);
-        // encoder.write_all(&data).await?;
-        // encoder.shutdown().await?;
-        // let compressed = encoder.into_inner();
-        // tokio::fs::write(format!("{}.br", path.display()), compressed).await?;
+        multi_compress(entry.path()).await.unwrap_or_else(|e| tracing::warn!("pre compress failed with `{e:?}`"))
     }
     tracing::info!("pre brotli compress for {dir} over");
+}
+
+pub async fn multi_compress(path: &Path) -> anyhow::Result<()> {
+    let permissions = tokio::fs::metadata(path).await?;
+    #[cfg(unix)]
+    if permissions.mode() & 0o200 != 0 {
+        tracing::debug!("{} don't has write permission", path.display());
+        return Ok(());
+    }
+    tracing::debug!("pre compress {}", path.display());
+    let data = tokio::fs::read(path).await?;
+    compress!(BrotliEncoder, "br", data, path);
+    compress!(GzipEncoder, "gz", data, path);
     Ok(())
 }
+
