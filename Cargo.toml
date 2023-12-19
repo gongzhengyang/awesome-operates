@@ -41,4 +41,4 @@ cfg-if = "1.0.0"
 serde = "1"
 
 [target.'cfg(windows)'.dependencies]
-encoding = { git = "https://github.com/lifthrasiir/rust-encoding.git", branch = "master" }
+encoding = { git = "https://github.com/lifthrasiir/rust-encoding.git", branch = "master", recv = "eb3d3c307df864f6a25e2ca16d49703e5d963ec5" }
