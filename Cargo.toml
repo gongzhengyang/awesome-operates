@@ -1,6 +1,6 @@
 [package]
 name = "awesome-operates"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 categories = ["asynchronous"]
 description = "A reposity includs many common use code utils"
