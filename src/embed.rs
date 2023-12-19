@@ -107,7 +107,9 @@ pub async fn pre_compress_dir(dir: &str) {
         .filter_map(|e| e.ok())
         .filter(|e| e.path().is_file() && !e.path().extension().unwrap_or_default().eq("br"))
     {
-        multi_compress(entry.path()).await.unwrap_or_else(|e| tracing::warn!("pre compress failed with `{e:?}`"))
+        multi_compress(entry.path())
+            .await
+            .unwrap_or_else(|e| tracing::warn!("pre compress failed with `{e:?}`"))
     }
     tracing::info!("pre brotli compress for {dir} over");
 }
@@ -125,4 +127,3 @@ pub async fn multi_compress(path: &Path) -> anyhow::Result<()> {
     compress!(GzipEncoder, "gz", data, path);
     Ok(())
 }
-
