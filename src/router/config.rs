@@ -1,16 +1,19 @@
+use axum::response::{IntoResponse, Response};
+use axum::Json;
 use std::collections::HashMap;
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Debug, Deserialize, Serialize, Default, JsonSchema, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, JsonSchema, Clone, PartialEq)]
 pub struct OpenapiMatchResp {
     /// the path display on openapi like `/user/:id, /user/list`
     pub openapi_path: String,
     /// request method, like `GET, POST`
     pub method: String,
-    pub openapi_summary: String,
+    pub openapi_log: String,
+    pub module: String,
     /// the request body component
     pub component: Option<Value>,
     /// like openapi path, but start with prefix
@@ -19,10 +22,10 @@ pub struct OpenapiMatchResp {
     pub url_args: HashMap<String, String>,
     pub body_match_list: Vec<BodyMatch>,
     /// format original summary by url_args(priority higher) and body value
-    pub summary: String,
+    pub log: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, Default, JsonSchema, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, JsonSchema, Clone, PartialEq)]
 pub struct BodyMatch {
     /// body key
     pub key: String,
@@ -36,7 +39,7 @@ pub struct BodyMatch {
 
 impl OpenapiMatchResp {
     pub fn update_formatted_summary(&mut self) {
-        let mut summary = self.openapi_summary.replace("{ ", "{").replace(" }", "}");
+        let mut summary = self.openapi_log.replace("{ ", "{").replace(" }", "}");
         for (key, value) in self.url_args.iter() {
             summary = summary.replace(&format!("{{{key}}}"), value);
         }
@@ -44,6 +47,12 @@ impl OpenapiMatchResp {
         for body in &self.body_match_list {
             summary = summary.replace(&format!("{{{}}}", body.key), &format!("{}", body.value));
         }
-        self.summary = summary.replace('"', "");
+        self.log = summary.replace('"', "");
+    }
+}
+
+impl IntoResponse for OpenapiMatchResp {
+    fn into_response(self) -> Response {
+        Json(self).into_response()
     }
 }

@@ -1,9 +1,8 @@
 use axum::{
     body::Body,
     http::{self, Method, Request},
-    response::Response,
-    routing::MethodRouter,
     Router,
+    routing::MethodRouter,
 };
 use serde_json::Value;
 use snafu::{OptionExt, ResultExt};
@@ -74,27 +73,25 @@ impl RequestMatcher {
         path_prefix: &str,
     ) -> Result<Vec<(String, MethodRouter)>> {
         let mut route_handlers = vec![];
-        let default_summary = serde_json::json!("");
+
         for (path, operate) in iter_object(openapi, "paths")? {
             let path = path.replace('{', ":").replace('}', "");
             for (method, detail) in operate.as_object().context(OptionNoneSnafu)?.iter() {
                 if !detail.is_object() {
                     continue;
                 }
-                let summary = detail.get("summary");
+
                 let component = Self::api_component(
                     openapi,
                     detail.pointer("/requestBody/content/application~1json/schema/$ref"),
                 );
                 let path_with_prefix = format!("{}{path}", path_prefix.trim_end_matches('/'));
+                let (module, openapi_log) = Self::fetch_openapi_module_log(detail);
                 let resp = OpenapiMatchResp {
                     openapi_path: path.clone(),
                     method: method.clone(),
-                    openapi_summary: summary
-                        .unwrap_or(&default_summary)
-                        .as_str()
-                        .unwrap_or("")
-                        .to_owned(),
+                    openapi_log,
+                    module,
                     component: component.cloned(),
                     path_with_prefix: path_with_prefix.clone(),
                     ..Default::default()
@@ -103,6 +100,25 @@ impl RequestMatcher {
             }
         }
         Ok(route_handlers)
+    }
+
+    /// fetch the line in summary or first line in description starts with `[`
+    pub fn fetch_openapi_module_log(detail: &Value) -> (String, String) {
+        for key in ["summary", "description"] {
+            if let Some((k, v)) = Self::fetch_openapi_log_by_key(detail, key) {
+                return (k, v);
+            }
+        }
+        ("".to_owned(), "".to_owned())
+    }
+
+    fn fetch_openapi_log_by_key(detail: &Value, key: &str) -> Option<(String, String)> {
+        let value = detail.get(key)?.as_str()?.splitn(2, "\n").next()?;
+        if !value.trim().starts_with("[") {
+            return None;
+        }
+        let (module, log) = value.split_once("]")?;
+        Some((module.replace("[", "").trim().to_owned(), log.trim().to_owned()))
     }
 
     pub fn api_component<'a>(
@@ -124,7 +140,7 @@ impl RequestMatcher {
         method: Method,
         path: &str,
         body: Option<Body>,
-    ) -> Result<Response> {
+    ) -> Result<OpenapiMatchResp> {
         // this line is very important
         let method = method
             .as_str()
@@ -145,21 +161,11 @@ impl RequestMatcher {
             .await
             .unwrap();
         tracing::debug!("match api with result status: {}", response.status());
-        Ok(response)
-    }
-
-    pub async fn match_request_to_json_response(
-        &mut self,
-        method: Method,
-        path: &str,
-        body: Option<Body>,
-    ) -> Result<Value> {
-        let response = self.match_request_to_response(method, path, body).await?;
         let bytes = http_body_util::BodyExt::collect(response.into_body())
             .await
             .context(AxumSnafu)?
             .to_bytes();
-        Ok(serde_json::from_slice(&bytes).context(SerdeJsonSnafu)?)
+        Ok(serde_json::from_slice::<OpenapiMatchResp>(&bytes).context(SerdeJsonSnafu)?)
     }
 
     pub fn build_request(method: Method, path: &str, body: Option<Body>) -> Request<Body> {

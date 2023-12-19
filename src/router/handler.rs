@@ -28,17 +28,16 @@ macro_rules! build_method_router {
             |axum::extract::Path(path_args): axum::extract::Path<
                 std::collections::HashMap<String, String>,
             >,
-             // axum::extract::Query(query): axum::extract::Query<serde_json::Value>,
              req: axum::extract::Request<axum::body::Body>| async move {
-                $crate::router::handler::handle_openapi_request(req, path_args, $resp).await
+                $crate::router::handler::handle_openapi_request(path_args, req, $resp).await
             },
         )
     };
 }
 
 pub async fn handle_openapi_request(
-    req: Request<Body>,
     path_args: HashMap<String, String>,
+    req: Request<Body>,
     mut resp: OpenapiMatchResp,
 ) -> Json<OpenapiMatchResp> {
     resp.url_args = path_args;

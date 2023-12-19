@@ -12,7 +12,7 @@ fn get_request_matcher() -> (RequestMatcher, Value) {
 async fn router_not_exists() {
     let (mut matcher, _) = get_request_matcher();
     let resp = matcher
-        .match_request_to_json_response(Method::GET, "/not-exists/", None)
+        .match_request_to_response(Method::GET, "/not-exists/", None)
         .await;
     assert!(resp.is_err());
 }
@@ -21,19 +21,21 @@ async fn router_not_exists() {
 async fn router_basic_openapi() {
     let (mut matcher, openapi) = get_request_matcher();
     let resp = matcher
-        .match_request_to_json_response(Method::GET, "/device/", None)
+        .match_request_to_response(Method::GET, "/device/", None)
         .await
         .unwrap();
+
     assert_eq!(
-        resp,
+        serde_json::json!(resp),
         serde_json::json!({
             "openapi_path": "/device/",
             "method": "get",
             "url_args": {},
             "path_with_prefix": "/device/",
             "body_match_list": [],
-            "summary": "查询设备状态数据 (最多保存历史1000条)",
-            "openapi_summary": "查询设备状态数据 (最多保存历史1000条)",
+            "module": "设备状态查询",
+            "log": "查询设备状态数据 (最多保存历史1000条)",
+            "openapi_log": "查询设备状态数据 (最多保存历史1000条)",
             "component": RequestMatcher::api_component(&openapi, Some(&serde_json::json!("")))
         })
     );
@@ -42,27 +44,24 @@ async fn router_basic_openapi() {
 #[tokio::test]
 async fn router_fetch_url_openapi() {
     let (mut matcher, openapi) = get_request_matcher();
-    let mut resp = matcher
-        .match_request_to_json_response(Method::GET, "/device/test-id1/test-id2/", None)
+    let resp = matcher
+        .match_request_to_response(Method::GET, "/device/test-id1/test-id2/", None)
         .await
         .unwrap();
-    let url_args = resp.as_object_mut().unwrap().remove("url_args").unwrap();
     assert_eq!(
-        url_args,
-        serde_json::json!({
-            "id": "test-id1",
-            "id2": "test-id2"
-        })
-    );
-    assert_eq!(
-        resp,
+        serde_json::json!(resp),
         serde_json::json!({
             "openapi_path": "/device/:id/:id2/",
             "method": "get",
+            "url_args": {
+                "id": "test-id1",
+                "id2": "test-id2"
+            },
             "path_with_prefix": "/device/:id/:id2/",
             "body_match_list": [],
-            "summary": "查询设备状态数据 (最多保存历史1000条) id id",
-            "openapi_summary": "查询设备状态数据 (最多保存历史1000条) id id",
+            "log": "",
+            "module": "",
+            "openapi_log": "",
             "component": RequestMatcher::api_component(&openapi, Some(&serde_json::json!("")))
         })
     );
@@ -71,27 +70,24 @@ async fn router_fetch_url_openapi() {
 #[tokio::test]
 async fn router_fetch_url_id_openapi() {
     let (mut matcher, openapi) = get_request_matcher();
-    let mut resp = matcher
-        .match_request_to_json_response(Method::GET, "/device/22/33/", None)
+    let resp = matcher
+        .match_request_to_response(Method::GET, "/device/22/33/", None)
         .await
         .unwrap();
-    let url_args = resp.as_object_mut().unwrap().remove("url_args").unwrap();
     assert_eq!(
-        url_args,
-        serde_json::json!({
-            "id": "22",
-            "id2": "33"
-        })
-    );
-    assert_eq!(
-        resp,
+        serde_json::json!(resp),
         serde_json::json!({
             "openapi_path": "/device/:id/:id2/",
             "path_with_prefix": "/device/:id/:id2/",
             "method": "get",
+            "url_args": {
+                "id": "22",
+                "id2": "33"
+            },
+              "module": "",
             "body_match_list": [],
-            "summary": "查询设备状态数据 (最多保存历史1000条) id id",
-             "openapi_summary": "查询设备状态数据 (最多保存历史1000条) id id",
+            "log": "",
+             "openapi_log": "",
             "component": RequestMatcher::api_component(&openapi, Some(&serde_json::json!("")))
         })
     );
@@ -107,20 +103,20 @@ async fn router_request_body_openapi() {
     });
     let (mut matcher, openapi) = get_request_matcher();
     let body = Body::from(format!("{body}"));
-    let mut resp = matcher
-        .match_request_to_json_response(Method::PUT, "/snmpconfig/", Some(body))
+    let resp = matcher
+        .match_request_to_response(Method::PUT, "/snmpconfig/", Some(body))
         .await
         .unwrap();
-    resp.as_object_mut().unwrap().remove("request");
     assert_eq!(
-        resp,
+        serde_json::json!(resp),
         serde_json::json!({
               "openapi_path": "/snmpconfig/",
               "path_with_prefix": "/snmpconfig/",
               "method": "put",
               "url_args": {},
-              "summary": "[snmp] 配置snmp的认证参数community为public, snmp状态: true, 版本信息是: [1,2]",
-              "openapi_summary": "[snmp] 配置snmp的认证参数community为{community}, snmp状态: {enabled}, 版本信息是: {versions}",
+            "module": "snmp",
+              "log": "配置snmp的认证参数community为public, snmp状态: true, 版本信息是: [1,2]",
+              "openapi_log": "配置snmp的认证参数community为{community}, snmp状态: {enabled}, 版本信息是: {versions}",
               "component": RequestMatcher::api_component(&openapi, Some(&serde_json::json!("#/components/schemas/SnmpConfig"))),
               "body_match_list": serde_json::json!([
           {
