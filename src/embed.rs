@@ -35,7 +35,7 @@ use tower_http::services::ServeDir;
 ///     let mut api = OpenApi::default();
 ///
 ///     awesome_operates::extract_all_files!(awesome_operates::embed::Asset);
-///     InitSwagger::new(EXTRACT_DIR_PATH, "swagger-init.js", "swagger.html", "../api.json").build().await.unwrap();
+///     InitSwagger::new(EXTRACT_SWAGGER_DIR_PATH, "swagger-init.js", "swagger.html", "../api.json").build().await.unwrap();
 ///     let app = Router::new()
 ///         // .api_route("/example", post_with(handlers::example, handlers::example_docs))
 ///         .nest_service("/docs/", server_dir(EXTRACT_DIR_PATH).await.unwrap())

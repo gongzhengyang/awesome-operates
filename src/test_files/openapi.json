@@ -933,7 +933,7 @@
             "description": ""
           }
         },
-        "summary": "[snmp] 配置snmp",
+        "summary": "[snmp] 配置snmp的认证参数community为{community}, snmp状态: {enabled}, 版本信息是: {versions}",
         "tags": [
           "snmp"
         ]

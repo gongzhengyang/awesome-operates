@@ -8,15 +8,22 @@ fn get_request_matcher() -> (RequestMatcher, Value) {
     (RequestMatcher::from_openapi(&openapi, "").unwrap(), openapi)
 }
 
-/// 基础测试
 #[tokio::test]
-async fn test_basic_openapi() {
+async fn router_not_exists() {
+    let (mut matcher, _) = get_request_matcher();
+    let resp = matcher
+        .match_request_to_json_response(Method::GET, "/not-exists/", None)
+        .await;
+    assert!(resp.is_err());
+}
+
+#[tokio::test]
+async fn router_basic_openapi() {
     let (mut matcher, openapi) = get_request_matcher();
-    let mut resp = matcher
+    let resp = matcher
         .match_request_to_json_response(Method::GET, "/device/", None)
         .await
         .unwrap();
-    resp.as_object_mut().unwrap().remove("request");
     assert_eq!(
         resp,
         serde_json::json!({
@@ -26,13 +33,14 @@ async fn test_basic_openapi() {
             "path_with_prefix": "/device/",
             "body_match_list": [],
             "summary": "查询设备状态数据 (最多保存历史1000条)",
+            "openapi_summary": "查询设备状态数据 (最多保存历史1000条)",
             "component": RequestMatcher::api_component(&openapi, Some(&serde_json::json!("")))
         })
     );
 }
 
 #[tokio::test]
-async fn test_fetch_url_openapi() {
+async fn router_fetch_url_openapi() {
     let (mut matcher, openapi) = get_request_matcher();
     let mut resp = matcher
         .match_request_to_json_response(Method::GET, "/device/test-id1/test-id2/", None)
@@ -46,7 +54,6 @@ async fn test_fetch_url_openapi() {
             "id2": "test-id2"
         })
     );
-    resp.as_object_mut().unwrap().remove("request");
     assert_eq!(
         resp,
         serde_json::json!({
@@ -55,13 +62,14 @@ async fn test_fetch_url_openapi() {
             "path_with_prefix": "/device/:id/:id2/",
             "body_match_list": [],
             "summary": "查询设备状态数据 (最多保存历史1000条) id id",
+            "openapi_summary": "查询设备状态数据 (最多保存历史1000条) id id",
             "component": RequestMatcher::api_component(&openapi, Some(&serde_json::json!("")))
         })
     );
 }
 
 #[tokio::test]
-async fn test_fetch_url_id_openapi() {
+async fn router_fetch_url_id_openapi() {
     let (mut matcher, openapi) = get_request_matcher();
     let mut resp = matcher
         .match_request_to_json_response(Method::GET, "/device/22/33/", None)
@@ -75,7 +83,6 @@ async fn test_fetch_url_id_openapi() {
             "id2": "33"
         })
     );
-    resp.as_object_mut().unwrap().remove("request");
     assert_eq!(
         resp,
         serde_json::json!({
@@ -84,13 +91,14 @@ async fn test_fetch_url_id_openapi() {
             "method": "get",
             "body_match_list": [],
             "summary": "查询设备状态数据 (最多保存历史1000条) id id",
+             "openapi_summary": "查询设备状态数据 (最多保存历史1000条) id id",
             "component": RequestMatcher::api_component(&openapi, Some(&serde_json::json!("")))
         })
     );
 }
 
 #[tokio::test]
-async fn test_request_body_openapi() {
+async fn router_request_body_openapi() {
     let body = serde_json::json!({
         "community": "public",
         "enabled": true,
@@ -108,34 +116,35 @@ async fn test_request_body_openapi() {
         resp,
         serde_json::json!({
               "openapi_path": "/snmpconfig/",
-               "path_with_prefix": "/snmpconfig/",
+              "path_with_prefix": "/snmpconfig/",
               "method": "put",
               "url_args": {},
-              "summary": "[snmp] 配置snmp",
+              "summary": "[snmp] 配置snmp的认证参数community为public, snmp状态: true, 版本信息是: [1,2]",
+              "openapi_summary": "[snmp] 配置snmp的认证参数community为{community}, snmp状态: {enabled}, 版本信息是: {versions}",
               "component": RequestMatcher::api_component(&openapi, Some(&serde_json::json!("#/components/schemas/SnmpConfig"))),
               "body_match_list": serde_json::json!([
           {
             "description":"community 认证参数",
             "key":"community",
-            "type":"string",
+            "value_type":"string",
             "value":"public"
           },
           {
             "description":"是否开启snmp",
             "key":"enabled",
-            "type":"boolean",
+            "value_type":"boolean",
             "value":true
           },
           {
             "description":"snmp 远程trap地址",
             "key":"trap",
-            "type":"string",
+            "value_type":"string",
             "value":"1.1.1.1"
           },
           {
             "description":"开启的snmp版本, 列表类型，参数可选项是 1,2,3",
             "key":"versions",
-            "type":"array",
+            "value_type":"array",
             "value": [1, 2]
           }
         ])

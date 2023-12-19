@@ -6,13 +6,16 @@ use axum::{
     Router,
 };
 use serde_json::Value;
-use snafu::OptionExt;
+use snafu::{OptionExt, ResultExt};
 use tower::{Service, ServiceExt};
 
-use crate::error::{OptionNoneSnafu, Result};
+pub use config::{BodyMatch, OpenapiMatchResp};
+
+use crate::error::{AxumSnafu, MethodStrParseSnafu, OptionNoneSnafu, Result, SerdeJsonSnafu};
 use crate::helper::iter_object;
 use crate::method_exchange;
 
+mod config;
 mod handler;
 #[cfg(test)]
 mod tests;
@@ -71,6 +74,7 @@ impl RequestMatcher {
         path_prefix: &str,
     ) -> Result<Vec<(String, MethodRouter)>> {
         let mut route_handlers = vec![];
+        let default_summary = serde_json::json!("");
         for (path, operate) in iter_object(openapi, "paths")? {
             let path = path.replace('{', ":").replace('}', "");
             for (method, detail) in operate.as_object().context(OptionNoneSnafu)?.iter() {
@@ -83,22 +87,18 @@ impl RequestMatcher {
                     detail.pointer("/requestBody/content/application~1json/schema/$ref"),
                 );
                 let path_with_prefix = format!("{}{path}", path_prefix.trim_end_matches('/'));
-                let resp = serde_json::json!({
-                    "openapi_path": path,
-                    "method": method,
-                    "summary": summary,
-                    "component": component,
-                    "path_with_prefix": path_with_prefix,
-                });
-                tracing::debug!(
-                    r#"read route handle
-                    path_prefix[{path_prefix}]
-                    path[{path}]
-                    method[{method}]
-                    summary[{summary:?}]
-                    component[{component:?}]
-                    resp[{resp}]"#
-                );
+                let resp = OpenapiMatchResp {
+                    openapi_path: path.clone(),
+                    method: method.clone(),
+                    openapi_summary: summary
+                        .unwrap_or(&default_summary)
+                        .as_str()
+                        .unwrap_or("")
+                        .to_owned(),
+                    component: component.cloned(),
+                    path_with_prefix: path_with_prefix.clone(),
+                    ..Default::default()
+                };
                 route_handlers.push((path_with_prefix, method_exchange!(method, &path, resp)));
             }
         }
@@ -124,9 +124,13 @@ impl RequestMatcher {
         method: Method,
         path: &str,
         body: Option<Body>,
-    ) -> anyhow::Result<Response> {
+    ) -> Result<Response> {
         // this line is very important
-        let method = method.as_str().to_uppercase().parse().unwrap();
+        let method = method
+            .as_str()
+            .to_uppercase()
+            .parse()
+            .context(MethodStrParseSnafu)?;
         tracing::debug!(
             "match request [method]{} [path]:{} body:[{body:?}] ",
             method,
@@ -135,9 +139,11 @@ impl RequestMatcher {
         let request = Self::build_request(method, path, body);
         tracing::debug!("match request before {request:?}");
         let response = ServiceExt::<Request<Body>>::ready(&mut self.router)
-            .await?
+            .await
+            .unwrap()
             .call(request)
-            .await?;
+            .await
+            .unwrap();
         tracing::debug!("match api with result status: {}", response.status());
         Ok(response)
     }
@@ -147,12 +153,13 @@ impl RequestMatcher {
         method: Method,
         path: &str,
         body: Option<Body>,
-    ) -> anyhow::Result<Value> {
+    ) -> Result<Value> {
         let response = self.match_request_to_response(method, path, body).await?;
         let bytes = http_body_util::BodyExt::collect(response.into_body())
-            .await?
+            .await
+            .context(AxumSnafu)?
             .to_bytes();
-        Ok(serde_json::from_slice(&bytes)?)
+        Ok(serde_json::from_slice(&bytes).context(SerdeJsonSnafu)?)
     }
 
     pub fn build_request(method: Method, path: &str, body: Option<Body>) -> Request<Body> {

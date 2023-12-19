@@ -1,7 +1,11 @@
+use std::collections::HashMap;
+
 use axum::body::Body;
 use axum::extract::Request;
 use axum::Json;
 use serde_json::Value;
+
+use super::config::{BodyMatch, OpenapiMatchResp};
 
 #[macro_export]
 macro_rules! method_exchange {
@@ -20,14 +24,34 @@ macro_rules! method_exchange {
 #[macro_export]
 macro_rules! build_method_router {
     ($method:ident, $path:expr, $resp:expr) => {
-        axum::routing::$method(|req: axum::extract::Request<axum::body::Body>| async move {
-            $crate::router::handler::handle_openapi_request(req, $resp).await
-        })
+        axum::routing::$method(
+            |axum::extract::Path(path_args): axum::extract::Path<
+                std::collections::HashMap<String, String>,
+            >,
+             // axum::extract::Query(query): axum::extract::Query<serde_json::Value>,
+             req: axum::extract::Request<axum::body::Body>| async move {
+                $crate::router::handler::handle_openapi_request(req, path_args, $resp).await
+            },
+        )
     };
 }
 
-pub async fn handle_openapi_request(req: Request<Body>, mut resp: Value) -> Json<Value> {
-    let (parts, body) = req.into_parts();
+pub async fn handle_openapi_request(
+    req: Request<Body>,
+    path_args: HashMap<String, String>,
+    mut resp: OpenapiMatchResp,
+) -> Json<OpenapiMatchResp> {
+    resp.url_args = path_args;
+    if let Some(component) = &resp.component {
+        let match_body_args = match_body_args(component, req.into_body()).await;
+        resp.body_match_list = match_body_args;
+    }
+    resp.update_formatted_summary();
+    Json(resp)
+}
+
+/// match body properties field by field with component with body
+pub async fn match_body_args(component: &Value, body: Body) -> Vec<BodyMatch> {
     let bytes = http_body_util::BodyExt::collect(body)
         .await
         .unwrap()
@@ -37,54 +61,20 @@ pub async fn handle_openapi_request(req: Request<Body>, mut resp: Value) -> Json
         tracing::info!("body transfer is not json for {bytes:?}");
         serde_json::json!({})
     });
-    resp["request"] = serde_json::json!({
-        "method": parts.method.as_str(),
-        "path": parts.uri.to_string(),
-        "body": json_body
-    });
-    resp["url_args"] = match_url_openapi_path(
-        resp["path_with_prefix"].as_str().unwrap_or_default(),
-        &parts.uri.to_string(),
-    );
-    resp["body_match_list"] = match_body_args(&resp["component"], &json_body);
-    Json(resp)
-}
 
-/// need to remove prefix in true path request
-///  match "/device/:id/:id2/" with "/device/aaa/bbb/?sasajk" one by one
-/// into {"id": "aaa", "id2": "bbb"}
-pub fn match_url_openapi_path(openapi: &str, path: &str) -> Value {
-    let mut resp = serde_json::json!({});
-    if let Some(openapi) = openapi.split('?').next() {
-        if let Some(path) = path.split('?').next() {
-            let openapi_splits = openapi.split('/').collect::<Vec<&str>>();
-            let path_splits = path.split('/').collect::<Vec<&str>>();
-            for (i, s) in openapi_splits.iter().enumerate() {
-                if s.starts_with(':') {
-                    resp[s.replace(':', "")] = serde_json::json!(path_splits.get(i));
-                }
-            }
-        }
-    }
-    serde_json::json!(resp)
-}
-
-/// match body properties field by field with component with body
-pub fn match_body_args(component: &Value, body: &Value) -> Value {
-    tracing::debug!("match body with {body}");
     let mut resp = vec![];
     if let Some(properties) = component["properties"].as_object() {
         for (key, value) in properties.iter() {
-            let body_value = &body[key];
+            let body_value = &json_body[key];
             if !body_value.is_null() {
-                resp.push(serde_json::json!({
-                    "key": key,
-                    "value": body_value,
-                    "description": value["description"],
-                    "type": value["type"]
-                }))
+                resp.push(BodyMatch {
+                    key: key.clone(),
+                    value: body_value.clone(),
+                    description: value["description"].as_str().unwrap_or("").to_owned(),
+                    value_type: value["type"].as_str().unwrap_or("").to_owned(),
+                });
             }
         }
     }
-    serde_json::json!(resp)
+    resp
 }

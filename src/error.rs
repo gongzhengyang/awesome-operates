@@ -53,6 +53,18 @@ pub enum AppError {
         location: Location,
         source: std::io::Error,
     },
+
+    #[snafu(display("str parse error {}", source))]
+    MethodStrParseError {
+        source: http::method::InvalidMethod,
+        location: Location,
+    },
+
+    #[snafu(display("serde_json {}", source))]
+    SerdeJson {
+        source: serde_json::Error,
+        location: Location,
+    },
 }
 
 impl IntoResponse for AppError {
