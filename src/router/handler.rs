@@ -3,9 +3,8 @@ use std::collections::HashMap;
 use axum::body::Body;
 use axum::extract::Request;
 use axum::Json;
-use serde_json::Value;
 
-use super::config::{BodyMatch, OpenapiMatchResp};
+use super::config::OpenapiMatchResp;
 
 #[macro_export]
 macro_rules! method_exchange {

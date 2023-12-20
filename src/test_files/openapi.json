@@ -1,6 +1,14 @@
 {
   "components": {
     "schemas": {
+      "AuthType": {
+        "description": "认证类型\n\n- `1`: `MD5`\n\n- `2`: `SHA`",
+        "enum": [
+          1,
+          2
+        ],
+        "type": "integer"
+      },
       "CommandExecuteResult": {
         "description": "命令执行结果",
         "properties": {

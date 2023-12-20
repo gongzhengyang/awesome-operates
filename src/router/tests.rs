@@ -1,4 +1,7 @@
+use crate::router::config::fetch_from_openapi_ref;
 use axum::body::Body;
+use std::time::Duration;
+use tower_http::follow_redirect::policy::PolicyExt;
 
 use super::*;
 
@@ -147,7 +150,7 @@ async fn router_request_body_openapi() {
     )
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread")]
 async fn router_request_ref() {
     let body = serde_json::json!({
       "auth_password": "string",
@@ -158,10 +161,75 @@ async fn router_request_ref() {
       "username": "string"
     });
     let (mut matcher, openapi) = get_request_matcher();
+    tokio::time::sleep(Duration::from_secs(1)).await;
     let body = Body::from(format!("{body}"));
     let resp = matcher
         .match_request_to_response(Method::POST, "/snmpusmconfig/", Some(body))
         .await
         .unwrap();
-    println!("{}", serde_json::json!(resp));
+    assert_eq!(
+        serde_json::json!(resp),
+        serde_json::json!({
+          "body_match_list":[
+            {
+              "description":"认证密码, 由大小写英文字母/数字组成，8-32位",
+              "key":"auth_password",
+              "value":"string",
+              "value_type":"string"
+            },
+            {
+              "description": "认证类型\n\n- `1`: `MD5`\n\n- `2`: `SHA`",
+              "key":"auth_type",
+              "value":1,
+              "value_type":"integer"
+            },
+            {
+              "description":"加密密码, 由大小写英文字母/数字组成，8-32位",
+              "key":"encryption_password",
+              "value":"string",
+              "value_type":"string"
+            },
+            {
+              "description":"加密算法\n\n- `1`: `DES`\n\n- `2`: `AES`",
+              "key":"encryption_type",
+              "value":1,
+              "value_type":"integer"
+            },
+            {
+              "description":"id",
+              "key":"id",
+              "value":0,
+              "value_type":""
+            },
+            {
+              "description":"用户名",
+              "key":"username",
+              "value":"string",
+              "value_type":"string"
+            }
+          ],
+          "component": RequestMatcher::api_component(&openapi, Some(&serde_json::json!("#/components/schemas/SnmpUSMConfig"))),
+          "log":"创建一个USM, 用户名string, 认证方式: MD5",
+          "method":"post",
+          "module":"snmp",
+          "openapi_log":"创建一个USM, 用户名{username}, 认证方式: {auth_type}",
+          "openapi_path":"/snmpusmconfig/",
+          "prefix":"",
+          "url_args":{ }
+        })
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn test_router_ref_fetch() {
+    let _ = get_request_matcher();
+    tokio::time::sleep(Duration::from_secs(1)).await;
+    let resp = fetch_from_openapi_ref(
+        "",
+        &serde_json::json!({"$ref":"#/components/schemas/AuthType"}),
+        "description",
+    )
+    .await
+    .unwrap();
+    assert!(resp.is_empty());
 }

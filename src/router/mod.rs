@@ -132,13 +132,13 @@ impl RequestMatcher {
     }
 
     fn fetch_openapi_log_by_key(detail: &Value, key: &str) -> Option<(String, String)> {
-        let value = detail.get(key)?.as_str()?.splitn(2, "\n").next()?;
-        if !value.trim().starts_with("[") {
+        let value = detail.get(key)?.as_str()?.split('\n').next()?;
+        if !value.trim().starts_with('[') {
             return None;
         }
-        let (module, log) = value.split_once("]")?;
+        let (module, log) = value.split_once(']')?;
         Some((
-            module.replace("[", "").trim().to_owned(),
+            module.replace('[', "").trim().to_owned(),
             log.trim().to_owned(),
         ))
     }

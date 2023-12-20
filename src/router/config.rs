@@ -67,14 +67,14 @@ impl OpenapiMatchResp {
         for body in &self.body_match_list {
             let body_value = if let Some(values) = body.value.as_array() {
                 let values_formatted = values
-                    .into_iter()
+                    .iter()
                     .map(|v| fetch_enum_value_label(&body.description, v.to_string()))
                     .collect::<Vec<String>>();
                 serde_json::json!(values_formatted).to_string()
             } else {
                 fetch_enum_value_label(&body.description, body.value.to_string()).to_owned()
             };
-            summary = summary.replace(&format!("{{{}}}", body.key), &format!("{}", body_value));
+            summary = summary.replace(&format!("{{{}}}", body.key), &body_value.to_string());
         }
         self.log = summary.replace('"', "");
         tracing::debug!(
@@ -125,30 +125,36 @@ impl OpenapiMatchResp {
             .as_object()
             .is_some_and(|x| x.keys().collect::<Vec<_>>().len().eq(&1))
         {
-            self.fetch_from_openapi_ref(value, key).await
+            fetch_from_openapi_ref(&self.prefix, value, key).await
         } else {
-            Self::pointer_for_string(value, key)
+            pointer_for_string(value, key)
         };
-        println!("fetch from {value} with key {key} to {resp:?}");
+
         resp.unwrap_or_else(|| "".to_owned())
     }
+}
 
-    fn pointer_for_string(value: &Value, key: &str) -> Option<String> {
-        let key = format!("/{}", key.trim_start_matches('/'));
-        Some(value.pointer(&key)?.as_str()?.to_owned())
-    }
+pub async fn fetch_from_openapi_ref(
+    openapi_prefix: &str,
+    component: &Value,
+    key: &str,
+) -> Option<String> {
+    let path = component["$ref"].as_str()?.trim_start_matches('#');
 
-    async fn fetch_from_openapi_ref(&self, component: &Value, key: &str) -> Option<String> {
-        let path = component["$ref"].as_str()?.trim_start_matches('#');
-        Self::pointer_for_string(
-            GLOBAL_PREFIX_OPENAPI
-                .read()
-                .await
-                .get(&self.prefix)?
-                .pointer(path)?,
-            key,
-        )
-    }
+    pointer_for_string(
+        GLOBAL_PREFIX_OPENAPI
+            .read()
+            .await
+            .get(openapi_prefix)?
+            .pointer(path)?,
+        key,
+    )
+}
+
+fn pointer_for_string(value: &Value, key: &str) -> Option<String> {
+    let key = format!("/{}", key.trim_start_matches('/'));
+    let resp = value.pointer(&key)?.as_str()?.to_owned();
+    Some(resp)
 }
 
 impl IntoResponse for OpenapiMatchResp {
