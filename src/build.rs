@@ -5,6 +5,22 @@
 ///#     awesome_operates::build::build_init();
 ///# }
 /// ```
+/// then, you can use
+/// ```
+/// //pub fn about() -> &'static str {
+/// //   concat!(
+/// //   "\nversion: ",
+/// //   env!("CARGO_PKG_VERSION"),
+/// //   "\nbranch: ",
+/// //   env!("GIT_BRANCH"),
+/// //   "\ncommit: ",
+/// //   env!("GIT_COMMIT"),
+/// //   "\ngit dirty: ",
+/// //   env!("GIT_DIRTY"),
+/// //   "\nbuild datetime: ",
+/// //   env!("BUILD_DATETIME")
+/// //   )
+/// ```
 pub fn build_init() {
     println!(
         "cargo:rustc-env=GIT_COMMIT={}",

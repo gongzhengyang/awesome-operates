@@ -1,11 +1,14 @@
 use axum::{
     body::Body,
     http::{self, Method, Request},
-    Router,
     routing::MethodRouter,
+    Router,
 };
+use once_cell::sync::Lazy;
 use serde_json::Value;
 use snafu::{OptionExt, ResultExt};
+use std::collections::HashMap;
+use tokio::sync::RwLock;
 use tower::{Service, ServiceExt};
 
 pub use config::{BodyMatch, OpenapiMatchResp};
@@ -52,6 +55,9 @@ pub struct RequestMatcher {
     pub router: Router,
 }
 
+pub static GLOBAL_PREFIX_OPENAPI: Lazy<RwLock<HashMap<String, Value>>> =
+    Lazy::new(|| RwLock::new(HashMap::new()));
+
 impl RequestMatcher {
     pub fn from_openapi(openapi: &Value, path_prefix: &str) -> Result<Self> {
         let route_handles = Self::openapi_route_handles(openapi, path_prefix)?;
@@ -72,30 +78,43 @@ impl RequestMatcher {
         openapi: &Value,
         path_prefix: &str,
     ) -> Result<Vec<(String, MethodRouter)>> {
+        let path_prefix_cloned = path_prefix.to_owned();
+        let openapi_cloned = openapi.clone();
+        tokio::spawn(async move {
+            GLOBAL_PREFIX_OPENAPI
+                .write()
+                .await
+                .insert(path_prefix_cloned, openapi_cloned);
+        });
         let mut route_handlers = vec![];
 
         for (path, operate) in iter_object(openapi, "paths")? {
             let path = path.replace('{', ":").replace('}', "");
-            for (method, detail) in operate.as_object().context(OptionNoneSnafu)?.iter() {
-                if !detail.is_object() {
-                    continue;
-                }
-
-                let component = Self::api_component(
-                    openapi,
-                    detail.pointer("/requestBody/content/application~1json/schema/$ref"),
-                );
-                let path_with_prefix = format!("{}{path}", path_prefix.trim_end_matches('/'));
+            for (method, detail) in operate
+                .as_object()
+                .context(OptionNoneSnafu)?
+                .iter()
+                .filter(|(_, obj)| obj.is_object())
+            {
                 let (module, openapi_log) = Self::fetch_openapi_module_log(detail);
                 let resp = OpenapiMatchResp {
                     openapi_path: path.clone(),
                     method: method.clone(),
                     openapi_log,
                     module,
-                    component: component.cloned(),
-                    path_with_prefix: path_with_prefix.clone(),
+                    component: Self::api_component(
+                        openapi,
+                        detail.pointer("/requestBody/content/application~1json/schema/$ref"),
+                    )
+                    .cloned(),
+                    prefix: path_prefix.to_owned(),
                     ..Default::default()
                 };
+                let path_with_prefix = format!("{}{path}", path_prefix.trim_end_matches('/'));
+                tracing::debug!(
+                    "generate path_with_prefix {path_with_prefix} {:?}",
+                    resp.component
+                );
                 route_handlers.push((path_with_prefix, method_exchange!(method, &path, resp)));
             }
         }
@@ -118,21 +137,17 @@ impl RequestMatcher {
             return None;
         }
         let (module, log) = value.split_once("]")?;
-        Some((module.replace("[", "").trim().to_owned(), log.trim().to_owned()))
+        Some((
+            module.replace("[", "").trim().to_owned(),
+            log.trim().to_owned(),
+        ))
     }
 
     pub fn api_component<'a>(
         openapi: &'a Value,
         component_path: Option<&Value>,
     ) -> Option<&'a Value> {
-        if let Some(path) = component_path {
-            if let Some(p) = path.as_str() {
-                if p.starts_with('#') {
-                    return openapi.pointer(&p.replace('#', ""));
-                }
-            }
-        }
-        None
+        openapi.pointer(component_path?.as_str()?.trim_start_matches('#'))
     }
 
     pub async fn match_request_to_response(
@@ -160,12 +175,14 @@ impl RequestMatcher {
             .call(request)
             .await
             .unwrap();
-        tracing::debug!("match api with result status: {}", response.status());
+
         let bytes = http_body_util::BodyExt::collect(response.into_body())
             .await
             .context(AxumSnafu)?
             .to_bytes();
-        Ok(serde_json::from_slice::<OpenapiMatchResp>(&bytes).context(SerdeJsonSnafu)?)
+        let resp = serde_json::from_slice::<OpenapiMatchResp>(&bytes).context(SerdeJsonSnafu)?;
+        tracing::debug!("match resp {resp:?}");
+        Ok(resp)
     }
 
     pub fn build_request(method: Method, path: &str, body: Option<Body>) -> Request<Body> {

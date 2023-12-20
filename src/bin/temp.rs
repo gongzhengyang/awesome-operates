@@ -1,6 +1,14 @@
-use axum::body::Body;
+use axum::{body::Body, http::Method};
 
-use super::*;
+use serde_json::Value;
+
+use awesome_operates::router::*;
+
+#[tokio::main]
+async fn main() {
+    tracing_subscriber::fmt::init();
+    router_basic_openapi().await;
+}
 
 fn get_request_matcher() -> (RequestMatcher, Value) {
     let openapi = std::fs::read_to_string("src/test_files/openapi.json").unwrap();
@@ -8,7 +16,6 @@ fn get_request_matcher() -> (RequestMatcher, Value) {
     (RequestMatcher::from_openapi(&openapi, "").unwrap(), openapi)
 }
 
-#[tokio::test]
 async fn router_not_exists() {
     let (mut matcher, _) = get_request_matcher();
     let resp = matcher
@@ -17,7 +24,6 @@ async fn router_not_exists() {
     assert!(resp.is_err());
 }
 
-#[tokio::test]
 async fn router_basic_openapi() {
     let (mut matcher, openapi) = get_request_matcher();
     let resp = matcher

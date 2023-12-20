@@ -1014,7 +1014,7 @@
             "description": ""
           }
         },
-        "summary": "[snmp] 创建一个USM",
+        "summary": "[snmp] 创建一个USM, 用户名{username}, 认证方式: {auth_type}",
         "tags": [
           "snmp"
         ]
