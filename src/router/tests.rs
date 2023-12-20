@@ -115,7 +115,7 @@ async fn router_request_body_openapi() {
               "method": "put",
               "url_args": {},
             "module": "snmp",
-              "log": "配置snmp的认证参数community为public, snmp状态: true, 版本信息是: [1,2]",
+              "log": "配置snmp的认证参数community为public, snmp状态: 开启, 版本信息是: [v1,v2c]",
               "openapi_log": "配置snmp的认证参数community为{community}, snmp状态: {enabled}, 版本信息是: {versions}",
               "component": RequestMatcher::api_component(&openapi, Some(&serde_json::json!("#/components/schemas/SnmpConfig"))),
               "body_match_list": serde_json::json!([
@@ -126,7 +126,7 @@ async fn router_request_body_openapi() {
             "value":"public"
           },
           {
-            "description":"是否开启snmp",
+            "description":"是否开启snmp - `true`: `开启` \n - `false`: `关闭`",
             "key":"enabled",
             "value_type":"boolean",
             "value":true
@@ -138,7 +138,7 @@ async fn router_request_body_openapi() {
             "value":"1.1.1.1"
           },
           {
-            "description":"开启的snmp版本, 列表类型，参数可选项是 1,2,3",
+            "description":"开启的snmp版本, 列表类型，参数可选项是 1,2,3  - `1`: `v1`\\n\\n- `2`: `v2c`\\n\\n- `3`: `v3`",
             "key":"versions",
             "value_type":"array",
             "value": [1, 2]

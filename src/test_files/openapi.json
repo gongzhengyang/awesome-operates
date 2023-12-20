@@ -450,7 +450,7 @@
             "type": "string"
           },
           "enabled": {
-            "description": "是否开启snmp",
+            "description": "是否开启snmp - `true`: `开启` \n - `false`: `关闭`",
             "type": "boolean"
           },
           "trap": {
@@ -458,7 +458,7 @@
             "type": "string"
           },
           "versions": {
-            "description": "开启的snmp版本, 列表类型，参数可选项是 1,2,3",
+            "description": "开启的snmp版本, 列表类型，参数可选项是 1,2,3  - `1`: `v1`\\n\\n- `2`: `v2c`\\n\\n- `3`: `v3`",
             "items": {
               "$ref": "#/components/schemas/SnmpVersion"
             },
