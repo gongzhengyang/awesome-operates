@@ -118,7 +118,11 @@ pub async fn multi_compress(path: &Path) -> anyhow::Result<()> {
     let permissions = tokio::fs::metadata(path).await?;
     #[cfg(unix)]
     if permissions.mode() & 0o200 != 0 {
-        tracing::debug!("{} don't has write permission", path.display());
+        tracing::info!(
+            "{} don't has write permission, just skip it, the file permission is `{:#o}`",
+            path.display(),
+            permissions.mode()
+        );
         return Ok(());
     }
     tracing::debug!("pre compress {}", path.display());
