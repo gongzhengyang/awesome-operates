@@ -15,7 +15,7 @@ pub mod swagger;
 /// use rust_embed::RustEmbed;
 ///
 /// #[derive(RustEmbed)]
-/// #[folder = "embed_files"]
+/// #[folder = "src/assets"]
 /// struct Asset;
 ///
 /// async fn extract() -> anyhow::Result<()>{

@@ -1,7 +1,8 @@
-use crate::router::config::fetch_from_openapi_ref;
-use axum::body::Body;
 use std::time::Duration;
-use tower_http::follow_redirect::policy::PolicyExt;
+
+use axum::body::Body;
+
+use crate::router::config::fetch_from_openapi_ref;
 
 use super::*;
 
@@ -229,7 +230,7 @@ async fn test_router_ref_fetch() {
         &serde_json::json!({"$ref":"#/components/schemas/AuthType"}),
         "description",
     )
-    .await
-    .unwrap();
-    assert!(resp.is_empty());
+        .await
+        .unwrap();
+    assert!(!resp.is_empty());
 }

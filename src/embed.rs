@@ -9,51 +9,58 @@ use tower_http::services::ServeDir;
 /// used with swagger openapi
 /// eg: I have a swagger.json at path swagger-files/api.json, so I can start a http service for generate swagger
 /// ```rust,no_run
-/// use awesome_operates::embed::{server_dir, EXTRACT_DIR_PATH};
-/// use awesome_operates::swagger::InitSwagger;
-/// use axum::{Router, Extension, routing::get, Json, response::{Response, IntoResponse}};
-/// use tower::ServiceBuilder;
-/// use tower_http::compression::CompressionLayer;
-/// use aide::openapi::OpenApi;
-/// use aide::transform::TransformOpenApi;
 /// use std::sync::Arc;
 ///
-/// async fn serve_docs(Extension(api): Extension<Arc<OpenApi>>) -> Response {
-///     Json(serde_json::json!(*api)).into_response()
-/// }
+///use aide::axum::ApiRouter;
+///use aide::openapi::OpenApi;
+///use aide::transform::TransformOpenApi;
+///use axum::{Extension, Json, response::{IntoResponse, Response}, routing::get};
+///use tower::ServiceBuilder;
+///use tower_http::compression::CompressionLayer;
 ///
-/// fn api_docs(api: TransformOpenApi) -> TransformOpenApi {
-///     api.title("数据采集")
-/// }
+///use awesome_operates::embed::{EXTRACT_DIR_PATH, EXTRACT_SWAGGER_DIR_PATH, server_dir};
+///use awesome_operates::swagger::InitSwagger;
 ///
-/// #[tokio::test]
-/// async fn server() -> anyhow::Result<()> {
-///     aide::gen::on_error(|error| {
-///         println!("{error}")
-///     });
-///     aide::gen::extract_schemas(true);
-///     let mut api = OpenApi::default();
+///async fn serve_docs(Extension(api): Extension<Arc<OpenApi>>) -> Response {
+///    Json(serde_json::json!(*api)).into_response()
+///}
 ///
-///     awesome_operates::extract_all_files!(awesome_operates::embed::Asset);
-///     InitSwagger::new(EXTRACT_SWAGGER_DIR_PATH, "swagger-init.js", "swagger.html", "../api.json").build().await.unwrap();
-///     let app = Router::new()
-///         // .api_route("/example", post_with(handlers::example, handlers::example_docs))
-///         .nest_service("/docs/", server_dir(EXTRACT_DIR_PATH).await.unwrap())
-///         .route("/api.json", get(serve_docs))
-///         .finish_api_with(&mut api, api_docs)
-///         .layer(ServiceBuilder::new()
-///                 .layer(CompressionLayer::new())
-///                 .layer(Extension(Arc::new(api))));
+///fn api_docs(api: TransformOpenApi) -> TransformOpenApi {
+///    api.title("数据采集")
+///}
 ///
-///     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-/// #    axum::serve(listener, app).await.unwrap();
-///     Ok(())
-///  }
+///#[tokio::main]
+///async fn main() {
+///    tracing_subscriber::fmt::init();
+///  //  server().await.unwrap();
+///}
+///
+///async fn server() -> anyhow::Result<()> {
+///    aide::gen::on_error(|error| {
+///        println!("{error}")
+///    });
+///    aide::gen::extract_schemas(true);
+///    let mut api = OpenApi::default();
+///
+///    awesome_operates::extract_all_files!(awesome_operates::embed::Asset);
+///    InitSwagger::new(EXTRACT_SWAGGER_DIR_PATH, "swagger-init.js", "swagger.html", "../api.json").build().await.unwrap();
+///    let app = ApiRouter::new()
+///        .nest_service("/docs/", server_dir(EXTRACT_DIR_PATH).await.unwrap())
+///        .route("/api.json", get(serve_docs))
+///        .finish_api_with(&mut api, api_docs)
+///        .layer(ServiceBuilder::new()
+///            .layer(CompressionLayer::new())
+///            .layer(Extension(Arc::new(api))));
+///
+///    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+///    axum::serve(listener, app).await.unwrap();
+///    Ok(())
+///}
 /// ```
 /// finally, you can visit at browser at http://127.0.0.1:3000/docs/ for your swagger
 #[derive(RustEmbed)]
 #[prefix = "embed_files/"]
-#[folder = "src/embed_files/"]
+#[folder = "src/assets/"]
 pub struct Asset;
 
 pub const EXTRACT_SWAGGER_DIR_PATH: &str = "embed_files/swagger";
@@ -105,7 +112,7 @@ pub async fn pre_compress_dir(dir: &str) {
     for entry in walkdir::WalkDir::new(dir)
         .into_iter()
         .filter_map(|e| e.ok())
-        .filter(|e| e.path().is_file() && !e.path().extension().unwrap_or_default().eq("br"))
+        .filter(|e| e.path().is_file() && !["br", "gz"].contains(&e.path().extension().unwrap_or_default().to_str().unwrap_or_default()))
     {
         multi_compress(entry.path())
             .await
@@ -117,7 +124,7 @@ pub async fn pre_compress_dir(dir: &str) {
 pub async fn multi_compress(path: &Path) -> anyhow::Result<()> {
     let permissions = tokio::fs::metadata(path).await?;
     #[cfg(unix)]
-    if permissions.mode() & 0o200 != 0 {
+    if permissions.mode() & 0o200 == 0 {
         tracing::info!(
             "{} don't has write permission, just skip it, the file permission is `{:#o}`",
             path.display(),
