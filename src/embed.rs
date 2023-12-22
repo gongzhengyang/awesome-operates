@@ -1,8 +1,7 @@
 use async_trait::async_trait;
-use axum::response::IntoResponse;
 use rust_embed::RustEmbed;
-use snafu::{ErrorCompat, IntoError, NoneError, ResultExt};
-use crate::error::{AppError, CommonIoSnafu};
+
+use crate::error::Result;
 
 #[derive(RustEmbed)]
 #[prefix = "embed_files/"]
@@ -38,28 +37,25 @@ macro_rules! extract_all_files {
     };
 }
 
-// #[async_trait]
-// pub trait AssetExtractExt: RustEmbed {
-//     type Error: snafu::Error;
-//
-//     async fn before_extract() -> Result<(), Self::Error> {
-//         Ok(())
-//     }
-//
-//     async fn perform_extract() -> Result<(), Self::Error> {
-//         // extract_all_files!(Self);
-//         tokio::fs::read("").await.context(CommonIoSnafu)?;
-//         Ok(())
-//     }
-//
-//     async fn extract() -> Result<(), Self::Error> {
-//         Self::before_extract().await?;
-//         Self::perform_extract().await?;
-//         Self::after_extract().await?;
-//         Ok(())
-//     }
-//
-//     async fn after_extract() -> Result<(), Self::Error> {
-//         Ok(())
-//     }
-// }
+#[async_trait]
+pub trait AssetExtractExt: RustEmbed {
+    async fn before_extract() -> Result<()> {
+        Ok(())
+    }
+
+    async fn perform_extract() -> Result<()> {
+        extract_all_files!(Self);
+        Ok(())
+    }
+
+    async fn extract() -> Result<()> {
+        Self::before_extract().await?;
+        Self::perform_extract().await?;
+        Self::after_extract().await?;
+        Ok(())
+    }
+
+    async fn after_extract() -> Result<()> {
+        Ok(())
+    }
+}
