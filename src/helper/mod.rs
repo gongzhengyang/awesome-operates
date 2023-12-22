@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Output;
 
 use cfg_if::cfg_if;
@@ -13,7 +13,7 @@ pub use iter::iter_object;
 pub use network::{get_virtual_interfaces, sync_get_virtual_interfaces};
 pub use version::{calculate_agent_version, get_binary_file_version, get_pkg_version};
 
-use crate::error::{CommonIoSnafu, OptionNoneSnafu, Result};
+use crate::error::{CommonIoSnafu, OptionNoneSnafu, Result, ZipExtractSnafu};
 
 mod execute;
 mod format;
@@ -66,6 +66,9 @@ pub async fn write_filepath_with_data(
     tokio::fs::write(&filepath, file)
         .await
         .context(CommonIoSnafu)?;
+    if filepath.as_ref().extension().is_some_and(|v| v.eq("zip")) {
+        zip_extensions::zip_extract(&filepath.as_ref().to_path_buf(), &PathBuf::new()).context(ZipExtractSnafu)?;
+    }
     #[cfg(unix)]
     add_execute_permission(filepath.as_ref().to_str().context(OptionNoneSnafu)?).await?;
     Ok(())

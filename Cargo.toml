@@ -43,6 +43,8 @@ encoding_rs = "0.8.33"
 schemars = "0.8"
 #cached = "0.46"
 tracing-subscriber = "0.3"
+zip = "0.6"
+zip-extensions = "0.6"
 
 [workspace]
 members = [".", "examples/*"]

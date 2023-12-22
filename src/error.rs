@@ -65,6 +65,12 @@ pub enum AppError {
         source: serde_json::Error,
         location: Location,
     },
+
+    #[snafu(display("zip extract {}", source))]
+    ZipExtract {
+        source: zip::result::ZipError,
+        location: Location,
+    },
 }
 
 impl IntoResponse for AppError {

@@ -4,16 +4,17 @@ use aide::axum::ApiRouter;
 use aide::openapi::OpenApi;
 use aide::transform::TransformOpenApi;
 use axum::{
-    response::{IntoResponse, Response},
-    routing::get,
-    Extension, Json,
+    Extension,
+    Json,
+    response::{IntoResponse, Response}, routing::get,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use tower::ServiceBuilder;
 use tower_http::compression::CompressionLayer;
 
-use awesome_operates::embed::{server_dir, EXTRACT_SWAGGER_DIR_PATH};
+use awesome_operates::embed::EXTRACT_SWAGGER_DIR_PATH;
+use awesome_operates::server::server_dir;
 use awesome_operates::swagger::InitSwagger;
 
 async fn serve_docs(Extension(api): Extension<Arc<OpenApi>>) -> Response {
@@ -53,9 +54,9 @@ async fn server() -> anyhow::Result<()> {
         "index.html",
         "../api.json",
     )
-    .build()
-    .await
-    .unwrap();
+        .build()
+        .await
+        .unwrap();
     let app = ApiRouter::new()
         .api_route("/hello", aide::axum::routing::get(example))
         .nest_service(
