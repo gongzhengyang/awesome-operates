@@ -230,7 +230,7 @@ async fn test_router_ref_fetch() {
         &serde_json::json!({"$ref":"#/components/schemas/AuthType"}),
         "description",
     )
-        .await
-        .unwrap();
+    .await
+    .unwrap();
     assert!(!resp.is_empty());
 }

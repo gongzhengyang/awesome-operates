@@ -20,6 +20,7 @@
 /// //   "\nbuild datetime: ",
 /// //   env!("BUILD_DATETIME")
 /// //   )
+/// // }
 /// ```
 pub fn build_init() {
     println!(

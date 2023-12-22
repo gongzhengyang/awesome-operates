@@ -2,13 +2,20 @@ use std::process::{Output, Stdio};
 
 use cfg_if::cfg_if;
 use serde::Serialize;
+use snafu::ResultExt;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use tokio::sync::mpsc::Sender;
 
-pub async fn execute_command(cmd: &str) -> anyhow::Result<Output> {
+use crate::error::{CommonIoSnafu, Result};
+
+pub async fn execute_command(cmd: &str) -> Result<Output> {
     tracing::info!("execute command `{cmd}`");
-    Ok(Command::new("sh").args(["-c", cmd]).output().await?)
+    Command::new("sh")
+        .args(["-c", cmd])
+        .output()
+        .await
+        .context(CommonIoSnafu)
 }
 
 pub async fn execute_command_with_args_sender(cmd: &str, args: Vec<String>, tx: Sender<String>) {

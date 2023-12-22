@@ -1,4 +1,8 @@
+use std::path::Path;
+use std::process::Output;
+
 use cfg_if::cfg_if;
+use snafu::{OptionExt, ResultExt};
 
 pub use execute::{execute_command, execute_command_with_args_sender, kill_process_by_pid};
 pub use format::{
@@ -8,6 +12,8 @@ pub use format::{
 pub use iter::iter_object;
 pub use network::{get_virtual_interfaces, sync_get_virtual_interfaces};
 pub use version::{calculate_agent_version, get_binary_file_version, get_pkg_version};
+
+use crate::error::{CommonIoSnafu, OptionNoneSnafu, Result};
 
 mod execute;
 mod format;
@@ -43,8 +49,25 @@ pub fn get_program_args(excludes: &Vec<&str>) -> Vec<String> {
 }
 
 #[cfg(unix)]
-pub async fn add_execute_permission(filepath: &str) -> anyhow::Result<()> {
-    execute_command(&format!("chmod a+x {}", filepath)).await?;
+pub async fn add_execute_permission(filepath: &str) -> Result<Output> {
+    let command = format!("chmod a+x {}", filepath);
+    execute_command(&command).await
+}
+
+pub async fn write_filepath_with_data(
+    filepath: impl AsRef<Path>,
+    file: impl AsRef<[u8]>,
+) -> Result<()> {
+    if let Some(parent) = filepath.as_ref().parent() {
+        tokio::fs::create_dir_all(parent)
+            .await
+            .context(CommonIoSnafu)?;
+    }
+    tokio::fs::write(&filepath, file)
+        .await
+        .context(CommonIoSnafu)?;
+    #[cfg(unix)]
+    add_execute_permission(filepath.as_ref().to_str().context(OptionNoneSnafu)?).await?;
     Ok(())
 }
 

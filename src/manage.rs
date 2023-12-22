@@ -1,6 +1,8 @@
+use snafu::ResultExt;
 use std::path::Path;
 use std::process::Output;
 
+use crate::error::{CommonIoSnafu, Result};
 use crate::helper::{self, get_program_args};
 
 /// register current program with command args as a service and enable it
@@ -8,9 +10,9 @@ pub async fn register_service(
     service_name: &str,
     exclude_args: &Vec<&str>,
     restart: bool,
-) -> anyhow::Result<Output> {
-    let exe_filepath = std::env::current_exe()?;
-    let work_directory = std::env::current_dir()?;
+) -> Result<Output> {
+    let exe_filepath = std::env::current_exe().context(CommonIoSnafu)?;
+    let work_directory = std::env::current_dir().context(CommonIoSnafu)?;
     let service_config = format!(
         r#"[Unit]
 Description= agent service
@@ -28,7 +30,9 @@ WantedBy=multi-user.target
         exe_filepath.display(),
         get_program_args(exclude_args).join(" ")
     );
-    tokio::fs::write(service_config_path(service_name), service_config).await?;
+    tokio::fs::write(service_config_path(service_name), service_config)
+        .await
+        .context(CommonIoSnafu)?;
     let mut command = format!("systemctl enable {service_name} && systemctl daemon-reload");
     if restart {
         command.push_str(&format!("&& systemctl restart {service_name}"));
@@ -39,7 +43,7 @@ WantedBy=multi-user.target
 ///reset service
 /// stop the service
 /// disable the service
-pub async fn reset(service_name: &str) -> anyhow::Result<Output> {
+pub async fn reset(service_name: &str) -> Result<Output> {
     let command = format!(
         "systemctl stop {service_name} \
         && systemctl disable {service_name} \
