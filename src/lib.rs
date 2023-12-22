@@ -10,3 +10,4 @@ pub mod proxy;
 pub mod router;
 pub mod schedule;
 pub mod swagger;
+pub mod server;

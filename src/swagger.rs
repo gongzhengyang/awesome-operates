@@ -1,5 +1,59 @@
 use std::fmt::Display;
 
+/// used with swagger openapi
+/// eg: I have a swagger.json at path swagger-files/api.json, so I can start a http service for generate swagger
+/// ```rust,no_run
+/// use std::sync::Arc;
+///
+///use aide::axum::ApiRouter;
+///use aide::openapi::OpenApi;
+///use aide::transform::TransformOpenApi;
+///use axum::{Extension, Json, response::{IntoResponse, Response}, routing::get};
+///use tower::ServiceBuilder;
+///use tower_http::compression::CompressionLayer;
+///
+///use awesome_operates::server::server_dir;
+///use awesome_operates::embed::{EXTRACT_DIR_PATH, EXTRACT_SWAGGER_DIR_PATH};
+///use awesome_operates::swagger::InitSwagger;
+///
+///async fn serve_docs(Extension(api): Extension<Arc<OpenApi>>) -> Response {
+///    Json(serde_json::json!(*api)).into_response()
+///}
+///
+///fn api_docs(api: TransformOpenApi) -> TransformOpenApi {
+///    api.title("数据采集")
+///}
+///
+///#[tokio::main]
+///async fn main() {
+///    tracing_subscriber::fmt::init();
+///  //  server().await.unwrap();
+///}
+///
+///async fn server() -> anyhow::Result<()> {
+///    aide::gen::on_error(|error| {
+///        println!("{error}")
+///    });
+///    aide::gen::extract_schemas(true);
+///    let mut api = OpenApi::default();
+///
+///    awesome_operates::extract_all_files!(awesome_operates::embed::Asset);
+///    InitSwagger::new(EXTRACT_SWAGGER_DIR_PATH, "swagger-init.js", "swagger.html", "../api.json").build().await.unwrap();
+///    let app = ApiRouter::new()
+///        .nest_service("/docs/", server_dir(EXTRACT_DIR_PATH).await.unwrap())
+///        .route("/api.json", get(serve_docs))
+///        .finish_api_with(&mut api, api_docs)
+///        .layer(ServiceBuilder::new()
+///            .layer(CompressionLayer::new())
+///            .layer(Extension(Arc::new(api))));
+///
+///    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+///    axum::serve(listener, app).await.unwrap();
+///    Ok(())
+///}
+/// ```
+/// finally, you can visit at browser at http://127.0.0.1:3000/docs/ for your swagger
+
 pub struct InitSwagger {
     file_prefix: String,
     pub js_filename: String,
@@ -29,8 +83,8 @@ pub struct InitSwagger {
 /// ```
 impl InitSwagger {
     pub fn new<T>(prefix: T, js_filename: T, index_html_filename: T, json_url: T) -> Self
-    where
-        T: Display,
+        where
+            T: Display,
     {
         InitSwagger {
             file_prefix: prefix.to_string(),
