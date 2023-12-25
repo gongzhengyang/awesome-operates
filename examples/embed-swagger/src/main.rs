@@ -4,9 +4,9 @@ use aide::axum::ApiRouter;
 use aide::openapi::OpenApi;
 use aide::transform::TransformOpenApi;
 use axum::{
-    Extension,
-    Json,
-    response::{IntoResponse, Response}, routing::get,
+    response::{IntoResponse, Response},
+    routing::get,
+    Extension, Json,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -54,9 +54,9 @@ async fn server() -> anyhow::Result<()> {
         "index.html",
         "../api.json",
     )
-        .build()
-        .await
-        .unwrap();
+    .build()
+    .await
+    .unwrap();
     let app = ApiRouter::new()
         .api_route("/hello", aide::axum::routing::get(example))
         .nest_service(

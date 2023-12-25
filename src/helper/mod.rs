@@ -67,7 +67,8 @@ pub async fn write_filepath_with_data(
         .await
         .context(CommonIoSnafu)?;
     if filepath.as_ref().extension().is_some_and(|v| v.eq("zip")) {
-        zip_extensions::zip_extract(&filepath.as_ref().to_path_buf(), &PathBuf::new()).context(ZipExtractSnafu)?;
+        zip_extensions::zip_extract(&filepath.as_ref().to_path_buf(), &PathBuf::new())
+            .context(ZipExtractSnafu)?;
     }
     #[cfg(unix)]
     add_execute_permission(filepath.as_ref().to_str().context(OptionNoneSnafu)?).await?;

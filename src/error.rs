@@ -71,6 +71,18 @@ pub enum AppError {
         source: zip::result::ZipError,
         location: Location,
     },
+
+    #[snafu(display("log file build InitError {}", source))]
+    LogFileBuild {
+        source: tracing_appender::rolling::InitError,
+        location: Location,
+    },
+
+    #[snafu(display("tracing set global failed {}", source))]
+    TracingSetGlobal {
+        source: tracing::subscriber::SetGlobalDefaultError,
+        location: Location,
+    },
 }
 
 impl IntoResponse for AppError {

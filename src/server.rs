@@ -1,5 +1,5 @@
-use tower_http::services::ServeDir;
 use crate::compress::pre_compress_dir;
+use tower_http::services::ServeDir;
 
 pub async fn server_dir(dir_path: &str) -> anyhow::Result<ServeDir> {
     let dir_path_clone = dir_path.to_owned();
