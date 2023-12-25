@@ -1,5 +1,6 @@
-use snafu::ResultExt;
 use std::path::Path;
+
+use snafu::ResultExt;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use tracing_subscriber::{fmt, layer::SubscriberExt};
@@ -36,12 +37,17 @@ pub async fn tracing_both_file_stdout(
         .filename_suffix(log_file_suffix)
         .build(log_dir)
         .context(LogFileBuildSnafu)?;
-
     let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
+
+    #[cfg(windows)]
+        let ansi_enabled = false;
+    #[cfg(unix)]
+        let ansi_enabled = true;
+
     let collector = tracing_subscriber::registry()
         .with(
             fmt::Layer::new()
-                .with_ansi(false)
+                .with_ansi(ansi_enabled)
                 .with_writer(std::io::stdout),
         )
         .with(fmt::Layer::new().with_ansi(false).with_writer(non_blocking));
