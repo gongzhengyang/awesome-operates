@@ -30,8 +30,8 @@ macro_rules! extract_all_files {
     ($asset:ty) => {
         for file in <$asset>::iter() {
             tracing::debug!("extract {}", file.as_ref());
-            let filepath = file.as_ref();
-            let file = <$asset>::get(filepath).unwrap().data;
+            let filepath = file.as_ref().clone();
+            let file = <$asset>::get(filepath).unwrap().data.clone();
             $crate::helper::write_filepath_with_data(filepath, file).await?;
         }
     };

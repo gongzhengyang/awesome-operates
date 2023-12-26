@@ -24,31 +24,36 @@ use crate::error::{CommonIoSnafu, LogFileBuildSnafu, Result, TracingSetGlobalSna
 ///  }
 /// ```
 
-pub async fn tracing_both_file_stdout
-(
+pub async fn tracing_both_file_stdout(
     log_dir: impl AsRef<Path>,
     log_file_prefix: impl Into<String>,
     log_file_suffix: impl Into<String>,
     rotation: Option<Rotation>,
-) -> Result<WorkerGuard>
-{
-    let (non_blocking, guard) = tracing_with_file(log_dir, log_file_prefix, log_file_suffix, rotation).await?;
+) -> Result<WorkerGuard> {
+    let (non_blocking, guard) =
+        tracing_with_file(log_dir, log_file_prefix, log_file_suffix, rotation).await?;
     #[cfg(windows)]
-        let ansi_enabled = false;
+    let ansi_enabled = false;
     #[cfg(unix)]
-        let ansi_enabled = true;
+    let ansi_enabled = true;
 
     let collector = tracing_subscriber::registry()
-        .with(fmt::Layer::new().with_ansi(ansi_enabled).with_writer(std::io::stdout))
+        .with(
+            fmt::Layer::new()
+                .with_ansi(ansi_enabled)
+                .with_writer(std::io::stdout),
+        )
         .with(fmt::Layer::new().with_ansi(false).with_writer(non_blocking));
     tracing::subscriber::set_global_default(collector).context(TracingSetGlobalSnafu)?;
     Ok(guard)
 }
 
-pub async fn tracing_with_file(log_dir: impl AsRef<Path>,
-                               log_file_prefix: impl Into<String>,
-                               log_file_suffix: impl Into<String>,
-                               rotation: Option<Rotation>) -> Result<(NonBlocking, WorkerGuard)> {
+pub async fn tracing_with_file(
+    log_dir: impl AsRef<Path>,
+    log_file_prefix: impl Into<String>,
+    log_file_suffix: impl Into<String>,
+    rotation: Option<Rotation>,
+) -> Result<(NonBlocking, WorkerGuard)> {
     tokio::fs::create_dir_all(&log_dir)
         .await
         .context(CommonIoSnafu)?;
@@ -61,7 +66,6 @@ pub async fn tracing_with_file(log_dir: impl AsRef<Path>,
     let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
     Ok((non_blocking, guard))
 }
-
 
 // pub trait CollectorFmtLayer<S>
 //     where
