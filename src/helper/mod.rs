@@ -4,7 +4,7 @@ use std::process::Output;
 use cfg_if::cfg_if;
 use snafu::{OptionExt, ResultExt};
 
-pub use execute::{execute_command, execute_command_with_args_sender, kill_process_by_pid};
+pub use execute::{execute_command, execute_command_with_args_sender, kill_process_by_pid, remove_file_when_older};
 pub use format::{
     decimal_with_four, decimal_with_two, default_formatted_now, format_from_timestamp,
     formatted_now, human_bytes,
