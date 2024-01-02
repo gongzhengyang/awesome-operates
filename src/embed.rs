@@ -32,7 +32,7 @@ macro_rules! extract_all_files {
             tracing::debug!("extract {}", file.as_ref());
             let filepath = file.as_ref().clone();
             let file = <$asset>::get(filepath).unwrap().data.clone();
-            $crate::helper::write_filepath_with_data(filepath, file).await?;
+            $crate::helper::write_filepath_with_data(filepath, file)?;
         }
     };
 }

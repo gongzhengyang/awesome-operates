@@ -22,6 +22,7 @@
 /// //   )
 /// // }
 /// ```
+#[inline]
 pub fn build_init() {
     println!(
         "cargo:rustc-env=GIT_COMMIT={}",

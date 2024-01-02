@@ -54,24 +54,30 @@ pub async fn add_execute_permission(filepath: &str) -> Result<Output> {
     execute_command(&command).await
 }
 
-pub async fn write_filepath_with_data(
+#[cfg(unix)]
+pub fn sync_add_execute_permission(filepath: &str) -> Result<Output> {
+    let command = format!("chmod a+x {}", filepath);
+    std::process::Command::new("sh")
+        .args(["-c", &command])
+        .output().context(CommonIoSnafu)
+}
+
+pub fn write_filepath_with_data(
     filepath: impl AsRef<Path>,
     file: impl AsRef<[u8]>,
 ) -> Result<()> {
     if let Some(parent) = filepath.as_ref().parent() {
-        tokio::fs::create_dir_all(parent)
-            .await
+        std::fs::create_dir_all(parent)
             .context(CommonIoSnafu)?;
     }
-    tokio::fs::write(&filepath, file)
-        .await
+    std::fs::write(&filepath, file)
         .context(CommonIoSnafu)?;
     if filepath.as_ref().extension().is_some_and(|v| v.eq("zip")) {
         zip_extensions::zip_extract(&filepath.as_ref().to_path_buf(), &PathBuf::new())
             .context(ZipExtractSnafu)?;
     }
     #[cfg(unix)]
-    add_execute_permission(filepath.as_ref().to_str().context(OptionNoneSnafu)?).await?;
+    sync_add_execute_permission(filepath.as_ref().to_str().context(OptionNoneSnafu)?)?;
     Ok(())
 }
 
