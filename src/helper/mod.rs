@@ -9,6 +9,7 @@ pub use format::{
     decimal_with_four, decimal_with_two, default_formatted_now, format_from_timestamp,
     formatted_now, human_bytes,
 };
+pub use fs::create_file_parent_dir;
 pub use iter::iter_object;
 pub use network::{get_virtual_interfaces, sync_get_virtual_interfaces};
 pub use version::{calculate_agent_version, get_binary_file_version, get_pkg_version};
@@ -21,6 +22,7 @@ mod iter;
 mod network;
 
 mod version;
+mod fs;
 
 cfg_if! {
     if #[cfg(unix)] {
