@@ -11,7 +11,7 @@ pub use format::{
 };
 pub use fs::create_file_parent_dir;
 pub use iter::iter_object;
-pub use network::{get_virtual_interfaces, sync_get_virtual_interfaces};
+pub use network::{get_virtual_interfaces, sync_get_virtual_interfaces, get_interface_ips};
 pub use version::{calculate_agent_version, get_binary_file_version, get_pkg_version};
 
 use crate::error::{CommonIoSnafu, OptionNoneSnafu, Result, ZipExtractSnafu};

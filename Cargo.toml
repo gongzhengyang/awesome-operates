@@ -46,5 +46,11 @@ walkdir = "2"
 zip = "0.6"
 zip-extensions = "0.6"
 
+[target.'cfg(unix)'.dependencies]
+pnet_datalink = "0.34.0"
+
+[target.'cfg(windows)'.dependencies]
+ipconfig = "0.3"
+
 [workspace]
 members = [".", "examples/*"]

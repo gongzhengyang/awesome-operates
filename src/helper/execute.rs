@@ -23,11 +23,11 @@ pub async fn execute_command(cmd: &str) -> Result<Output> {
 pub async fn execute_command_with_args_sender(cmd: &str, args: Vec<String>, tx: Sender<String>) {
     tracing::info!("execute command `{cmd}` with args: `{args:?}`");
     let mut child = Command::new(cmd)
+        .kill_on_drop(true)
         .args(args)
         .stdout(Stdio::piped())
         .spawn()
         .expect("fail to execute");
-
     let stdout = child
         .stdout
         .take()
