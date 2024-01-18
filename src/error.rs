@@ -83,6 +83,30 @@ pub enum AppError {
         source: tracing::subscriber::SetGlobalDefaultError,
         location: Location,
     },
+
+    #[snafu(display("serde urlencoded error {source}"))]
+    SerdeUrlEncodedSer {
+        source: serde_urlencoded::ser::Error,
+        location: Location,
+    },
+
+    #[snafu(display("serde urlencoded error de {source}"))]
+    SerdeUrlEncodedDe {
+        source: serde_urlencoded::de::Error,
+        location: Location,
+    },
+
+    #[snafu(display("invalid url {source}"))]
+    InvalidUrl {
+        source: http::uri::InvalidUri,
+        location: Location,
+    },
+    #[snafu(display("invalid uri parts {source}"))]
+    InvalidUriParts {
+        source: http::uri::InvalidUriParts,
+        location: Location,
+    },
+
 }
 
 impl IntoResponse for AppError {

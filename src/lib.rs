@@ -12,3 +12,4 @@ pub mod router;
 pub mod schedule;
 pub mod server;
 pub mod swagger;
+pub mod axum;
