@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::process::Output;
+use std::time::Duration;
 
 use cfg_if::cfg_if;
 use snafu::{OptionExt, ResultExt};
@@ -64,6 +65,7 @@ pub fn sync_add_execute_permission(filepath: &str) -> Result<Output> {
         .output().context(CommonIoSnafu)
 }
 
+/// one can
 pub fn write_filepath_with_data(
     filepath: impl AsRef<Path>,
     file: impl AsRef<[u8]>,
@@ -72,8 +74,18 @@ pub fn write_filepath_with_data(
         std::fs::create_dir_all(parent)
             .context(CommonIoSnafu)?;
     }
-    std::fs::write(&filepath, file)
-        .context(CommonIoSnafu)?;
+    if std::fs::write(&filepath, &file).context(CommonIoSnafu).is_err() {
+        let path = filepath.as_ref().to_owned();
+        #[cfg(unix)]
+        tokio::spawn(async move {
+            let filename = path.file_name().unwrap_or_default().to_string_lossy();
+            if !filename.is_empty() {
+                let _ = execute_command(&format!("pkill -9 {}", filename)).await;
+            }
+        });
+        std::thread::sleep(Duration::from_secs(5));
+        std::fs::write(&filepath, file).context(CommonIoSnafu)?;
+    }
     if filepath.as_ref().extension().is_some_and(|v| v.eq("zip")) {
         zip_extensions::zip_extract(&filepath.as_ref().to_path_buf(), &PathBuf::new())
             .context(ZipExtractSnafu)?;
