@@ -34,7 +34,8 @@ rust_decimal = { version = "1.33", features = ["serde-float"] }
 schemars = "0.8"
 serde = "1"
 serde_json = "1"
-snafu = "0.7"
+serde_urlencoded = "0.7"
+snafu = "0.8"
 tokio = { version = "1", features = ["full"] }
 tower = { version = "0.4", features = ["util"] }
 tower-http = { version = "0.5", features = ["full"] }
@@ -44,7 +45,6 @@ tracing-subscriber = "0.3"
 walkdir = "2"
 zip = "0.6"
 zip-extensions = "0.6"
-serde_urlencoded = "0.7"
 
 [target.'cfg(unix)'.dependencies]
 pnet_datalink = "0.34.0"

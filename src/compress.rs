@@ -51,10 +51,12 @@ macro_rules! compress {
             Vec::new(),
             async_compression::Level::Best,
         );
-        encoder.write_all(&$data).await?;
-        encoder.shutdown().await?;
+        encoder.write_all(&$data).await.context(CommonIoSnafu)?;
+        encoder.shutdown().await.context(CommonIoSnafu)?;
         let compressed = encoder.into_inner();
-        tokio::fs::write(format!("{}.{}", $path.display(), $extension), compressed).await?;
+        tokio::fs::write(format!("{}.{}", $path.display(), $extension), compressed)
+            .await
+            .context(CommonIoSnafu)?;
     };
 }
 
