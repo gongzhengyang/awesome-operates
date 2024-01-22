@@ -1,8 +1,11 @@
+use snafu::ResultExt;
 #[cfg(unix)]
 use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 
 use tokio::io::AsyncWriteExt;
+
+use crate::error::{CommonIoSnafu, Result};
 
 /// very time consuming operate, maybe even minitues
 /// use `tokio::spawn`
@@ -55,8 +58,8 @@ macro_rules! compress {
     };
 }
 
-pub async fn multi_compress(path: &Path) -> anyhow::Result<()> {
-    let permissions = tokio::fs::metadata(path).await?;
+pub async fn multi_compress(path: &Path) -> Result<()> {
+    let permissions = tokio::fs::metadata(path).await.context(CommonIoSnafu)?;
     #[cfg(unix)]
     if permissions.mode() & 0o200 == 0 {
         tracing::info!(
@@ -67,7 +70,7 @@ pub async fn multi_compress(path: &Path) -> anyhow::Result<()> {
         return Ok(());
     }
     tracing::debug!("pre compress {}", path.display());
-    let data = tokio::fs::read(path).await?;
+    let data = tokio::fs::read(path).await.context(CommonIoSnafu)?;
     compress!(BrotliEncoder, "br", data, path);
     compress!(GzipEncoder, "gz", data, path);
     Ok(())

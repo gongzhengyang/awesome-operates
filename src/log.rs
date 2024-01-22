@@ -66,35 +66,3 @@ pub async fn tracing_with_file(
     let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
     Ok((non_blocking, guard))
 }
-
-// pub trait CollectorFmtLayer<S>
-//     where
-//         S: tracing::Subscriber + for<'a> tracing_subscriber::registry::LookupSpan<'a>
-// {
-//     type L: Layer<S>;
-//     fn fmt_layer(&self) -> Self::L;
-// }
-//
-// pub struct StdoutLayer;
-//
-// impl<S: tracing::Subscriber + for<'a> tracing_subscriber::registry::LookupSpan<'a>> CollectorFmtLayer<S> for StdoutLayer {
-//     type L = fmt::Layer<S, DefaultFields, Format, fn() -> Stdout>;
-//
-//     fn fmt_layer(&self) -> Self::L {
-//         #[cfg(windows)]
-//             let ansi_enabled = false;
-//         #[cfg(unix)]
-//             let ansi_enabled = true;
-//         fmt::Layer::new().with_ansi(ansi_enabled).with_writer(std::io::stdout)
-//     }
-// }
-//
-// pub struct FileFmtLayer;
-//
-// impl<S: tracing::Subscriber + for<'a> tracing_subscriber::registry::LookupSpan<'a>> CollectorFmtLayer<S> for FileFmtLayer {
-//     type L = fmt::Layer<S>;
-//
-//     fn fmt_layer(&self) -> Self::L {
-//         fmt::Layer::new().with_ansi(false)
-//     }
-// }

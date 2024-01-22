@@ -14,12 +14,13 @@ pub const EXTRACT_DIR_PATH: &str = "embed_files";
 /// usage
 /// ```
 /// use rust_embed::RustEmbed;
+/// use awesome_operates::error::Result;
 ///
 /// #[derive(RustEmbed)]
 /// #[folder = "src/assets"]
 /// struct Asset;
 ///
-/// async fn extract() -> anyhow::Result<()>{
+/// async fn extract() -> Result<()>{
 /// #   awesome_operates::extract_all_files!(Asset);
 ///     Ok(())
 /// }

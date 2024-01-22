@@ -106,7 +106,6 @@ pub enum AppError {
         source: http::uri::InvalidUriParts,
         location: Location,
     },
-
 }
 
 impl IntoResponse for AppError {

@@ -59,23 +59,22 @@ pub fn service_config_path(service_name: &str) -> String {
     format!("/lib/systemd/system/{service_name}.service")
 }
 
-pub async fn check_update_binary(
-    update_filepath: &str,
-    original_filepath: &str,
-) -> anyhow::Result<()> {
+pub async fn check_update_binary(update_filepath: &str, original_filepath: &str) -> Result<()> {
     tracing::debug!("check update binary");
     if binary_filepath_execute_success(update_filepath)
         .await
         .unwrap_or_default()
     {
         tracing::info!("rename {update_filepath} into {original_filepath}");
-        tokio::fs::rename(update_filepath, original_filepath).await?;
+        tokio::fs::rename(update_filepath, original_filepath)
+            .await
+            .context(CommonIoSnafu)?;
     }
     Ok(())
 }
 
 /// check filepath binary can execute success
-pub async fn binary_filepath_execute_success(filepath: &str) -> anyhow::Result<bool> {
+pub async fn binary_filepath_execute_success(filepath: &str) -> Result<bool> {
     if !Path::new(filepath).exists() {
         return Ok(false);
     }

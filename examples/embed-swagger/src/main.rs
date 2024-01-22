@@ -14,6 +14,7 @@ use tower::ServiceBuilder;
 use tower_http::compression::CompressionLayer;
 
 use awesome_operates::embed::EXTRACT_SWAGGER_DIR_PATH;
+use awesome_operates::error::Result;
 use awesome_operates::server::server_dir;
 use awesome_operates::swagger::InitSwagger;
 
@@ -42,7 +43,7 @@ async fn main() {
     server().await.unwrap();
 }
 
-async fn server() -> anyhow::Result<()> {
+async fn server() -> Result<()> {
     aide::gen::on_error(|error| println!("{error}"));
     aide::gen::extract_schemas(true);
     let mut api = OpenApi::default();

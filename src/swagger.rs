@@ -1,4 +1,7 @@
+use snafu::ResultExt;
 use std::fmt::Display;
+
+use crate::error::{CommonIoSnafu, Result};
 
 /// used with swagger openapi
 /// eg: I have a swagger.json at path swagger-files/api.json, so I can start a http service for generate swagger
@@ -15,6 +18,7 @@ use std::fmt::Display;
 ///use awesome_operates::server::server_dir;
 ///use awesome_operates::embed::{EXTRACT_DIR_PATH, EXTRACT_SWAGGER_DIR_PATH};
 ///use awesome_operates::swagger::InitSwagger;
+///use awesome_operates::error::Result;
 ///
 ///async fn serve_docs(Extension(api): Extension<Arc<OpenApi>>) -> Response {
 ///    Json(serde_json::json!(*api)).into_response()
@@ -30,7 +34,7 @@ use std::fmt::Display;
 ///  //  server().await.unwrap();
 ///}
 ///
-///async fn server() -> anyhow::Result<()> {
+///async fn server() -> Result<()> {
 ///    aide::gen::on_error(|error| {
 ///        println!("{error}")
 ///    });
@@ -68,9 +72,10 @@ pub struct InitSwagger {
 /// embed_files/swagger/swagger-initializer.js(/swagger-json/api.json will be the key url value)
 /// ```rust,no_run
 /// use awesome_operates::swagger::InitSwagger;
+/// use awesome_operates::error::Result;
 ///
 /// #[tokio::test]
-/// async fn openapi_write() -> anyhow::Result<()> {
+/// async fn openapi_write() -> Result<()> {
 ///     awesome_operates::extract_all_files!(awesome_operates::embed::Asset);
 ///     InitSwagger::new(
 ///         "embed_files/swagger/",
@@ -108,13 +113,13 @@ impl InitSwagger {
             .to_owned()
     }
 
-    pub async fn build(&self) -> anyhow::Result<()> {
+    pub async fn build(&self) -> Result<()> {
         self.rewrite_swagger_index_html().await?;
         self.rewrite_swagger_initializer_js().await?;
         Ok(())
     }
 
-    pub async fn rewrite_swagger_index_html(&self) -> anyhow::Result<()> {
+    pub async fn rewrite_swagger_index_html(&self) -> Result<()> {
         let index_html = format!(
             r#"<!-- HTML for static distribution bundle build -->
 <!DOCTYPE html>
@@ -142,11 +147,13 @@ impl InitSwagger {
             "write swagger index at path: {}",
             self.index_html_filepath()
         );
-        tokio::fs::write(&self.index_html_filepath(), index_html).await?;
+        tokio::fs::write(&self.index_html_filepath(), index_html)
+            .await
+            .context(CommonIoSnafu)?;
         Ok(())
     }
 
-    pub async fn rewrite_swagger_initializer_js(&self) -> anyhow::Result<()> {
+    pub async fn rewrite_swagger_initializer_js(&self) -> Result<()> {
         let js = format!(
             r#"window.onload = function() {{
   //<editor-fold desc="Changeable Configuration Block">
@@ -175,7 +182,9 @@ impl InitSwagger {
             &self.json_uri
         );
         tracing::info!("write js initializer path: {}", self.js_filepath());
-        tokio::fs::write(&self.js_filepath(), js).await?;
+        tokio::fs::write(&self.js_filepath(), js)
+            .await
+            .context(CommonIoSnafu)?;
         Ok(())
     }
 }

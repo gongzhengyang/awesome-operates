@@ -5,14 +5,16 @@ use std::time::Duration;
 use cfg_if::cfg_if;
 use snafu::{OptionExt, ResultExt};
 
-pub use execute::{execute_command, execute_command_with_args_sender, kill_process_by_pid, remove_file_when_older};
+pub use execute::{
+    execute_command, execute_command_with_args_sender, kill_process_by_pid, remove_file_when_older,
+};
 pub use format::{
     decimal_with_four, decimal_with_two, default_formatted_now, format_from_timestamp,
     formatted_now, human_bytes,
 };
 pub use fs::create_file_parent_dir;
 pub use iter::iter_object;
-pub use network::{get_virtual_interfaces, sync_get_virtual_interfaces, get_interface_ips};
+pub use network::{get_interface_ips, get_virtual_interfaces, sync_get_virtual_interfaces};
 pub use version::{calculate_agent_version, get_binary_file_version, get_pkg_version};
 
 use crate::error::{CommonIoSnafu, OptionNoneSnafu, Result, ZipExtractSnafu};
@@ -22,8 +24,8 @@ mod format;
 mod iter;
 mod network;
 
-mod version;
 mod fs;
+mod version;
 
 cfg_if! {
     if #[cfg(unix)] {
@@ -62,19 +64,19 @@ pub fn sync_add_execute_permission(filepath: &str) -> Result<Output> {
     let command = format!("chmod a+x {}", filepath);
     std::process::Command::new("sh")
         .args(["-c", &command])
-        .output().context(CommonIoSnafu)
+        .output()
+        .context(CommonIoSnafu)
 }
 
 /// one can
-pub fn write_filepath_with_data(
-    filepath: impl AsRef<Path>,
-    file: impl AsRef<[u8]>,
-) -> Result<()> {
+pub fn write_filepath_with_data(filepath: impl AsRef<Path>, file: impl AsRef<[u8]>) -> Result<()> {
     if let Some(parent) = filepath.as_ref().parent() {
-        std::fs::create_dir_all(parent)
-            .context(CommonIoSnafu)?;
+        std::fs::create_dir_all(parent).context(CommonIoSnafu)?;
     }
-    if std::fs::write(&filepath, &file).context(CommonIoSnafu).is_err() {
+    if std::fs::write(&filepath, &file)
+        .context(CommonIoSnafu)
+        .is_err()
+    {
         let path = filepath.as_ref().to_owned();
         #[cfg(unix)]
         tokio::spawn(async move {
