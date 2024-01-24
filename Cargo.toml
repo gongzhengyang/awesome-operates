@@ -45,6 +45,7 @@ tracing-subscriber = "0.3"
 walkdir = "2"
 zip = "0.6"
 zip-extensions = "0.6"
+moka = {version = "0.12", features = ["future"]}
 
 [target.'cfg(unix)'.dependencies]
 pnet_datalink = "0.34.0"
