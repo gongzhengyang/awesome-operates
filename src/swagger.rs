@@ -16,7 +16,7 @@ use crate::error::{CommonIoSnafu, Result};
 ///use tower_http::compression::CompressionLayer;
 ///
 ///use awesome_operates::server::server_dir;
-///use awesome_operates::embed::{EXTRACT_DIR_PATH, EXTRACT_SWAGGER_DIR_PATH};
+///use awesome_operates::embed::{EXTRACT_DIR_PATH, EXTRACT_SWAGGER_DIR_PATH, AssetExtractExt};
 ///use awesome_operates::swagger::InitSwagger;
 ///use awesome_operates::error::Result;
 ///
@@ -41,10 +41,10 @@ use crate::error::{CommonIoSnafu, Result};
 ///    aide::gen::extract_schemas(true);
 ///    let mut api = OpenApi::default();
 ///
-///    awesome_operates::extract_all_files!(awesome_operates::embed::Asset);
+///    awesome_operates::embed::Asset::extract().await?;
 ///    InitSwagger::new(EXTRACT_SWAGGER_DIR_PATH, "swagger-init.js", "swagger.html", "../api.json").build().await.unwrap();
 ///    let app = ApiRouter::new()
-///        .nest_service("/docs/", server_dir(EXTRACT_DIR_PATH).await.unwrap())
+///        .nest_service("/docs/", server_dir(EXTRACT_DIR_PATH).await)
 ///        .route("/api.json", get(serve_docs))
 ///        .finish_api_with(&mut api, api_docs)
 ///        .layer(ServiceBuilder::new()

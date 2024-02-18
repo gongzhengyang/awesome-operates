@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use tower::ServiceBuilder;
 use tower_http::compression::CompressionLayer;
 
-use awesome_operates::embed::EXTRACT_SWAGGER_DIR_PATH;
+use awesome_operates::embed::{AssetExtractExt, EXTRACT_SWAGGER_DIR_PATH};
 use awesome_operates::error::Result;
 use awesome_operates::server::server_dir;
 use awesome_operates::swagger::InitSwagger;
@@ -47,8 +47,7 @@ async fn server() -> Result<()> {
     aide::gen::on_error(|error| println!("{error}"));
     aide::gen::extract_schemas(true);
     let mut api = OpenApi::default();
-
-    awesome_operates::extract_all_files!(awesome_operates::embed::Asset);
+    awesome_operates::embed::Asset::extract().await?;
     InitSwagger::new(
         EXTRACT_SWAGGER_DIR_PATH,
         "swagger-init.js",
@@ -60,10 +59,7 @@ async fn server() -> Result<()> {
     .unwrap();
     let app = ApiRouter::new()
         .api_route("/hello", aide::axum::routing::get(example))
-        .nest_service(
-            "/swagger/",
-            server_dir(EXTRACT_SWAGGER_DIR_PATH).await.unwrap(),
-        )
+        .nest_service("/swagger/", server_dir(EXTRACT_SWAGGER_DIR_PATH).await)
         .route("/api.json", get(serve_docs))
         .finish_api_with(&mut api, api_docs)
         .layer(

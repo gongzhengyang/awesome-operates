@@ -90,19 +90,32 @@ where
 }
 
 pub async fn remove_file_when_older(filepath: impl AsRef<Path> + Display) {
-    inner_remove_file_when_older(filepath)
+    inner_remove_file_when_older(&filepath)
         .await
         .unwrap_or_default()
 }
 
 async fn inner_remove_file_when_older(filepath: impl AsRef<Path> + Display) -> std::io::Result<()> {
-    let check = tokio::fs::metadata(&filepath).await?.modified()?;
-    let current_running = tokio::fs::metadata(std::env::current_exe()?)
-        .await?
-        .modified()?;
-    if current_running > check {
-        tracing::info!("remove {filepath} because it`s older, current {current_running:?}, filepath: {filepath} {check:?}");
+    if is_current_running_newer(&filepath).is_ok_and(|v| v) {
+        tracing::info!("remove {filepath} because it`s older");
         tokio::fs::remove_file(filepath).await?;
     }
     Ok(())
+}
+
+pub fn is_current_running_newer(filepath: impl AsRef<Path> + Display) -> std::io::Result<bool> {
+    let check = std::fs::metadata(&filepath)?.modified()?;
+    let current_running = std::fs::metadata(std::env::current_exe()?)?.modified()?;
+    // let check = tokio::fs::metadata(&filepath).await?.modified()?;
+    // let current_running = tokio::fs::metadata(std::env::current_exe()?)
+    //     .await?
+    //     .modified()?;
+    let newer = current_running > check;
+    let format_time = |v| chrono::DateTime::<chrono::offset::Local>::from(v);
+    tracing::debug!(
+        "check file modified current: {:?} check [{filepath}]{:?} newer: {newer}",
+        format_time(current_running),
+        format_time(check)
+    );
+    Ok(newer)
 }
