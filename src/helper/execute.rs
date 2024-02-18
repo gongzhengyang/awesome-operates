@@ -96,7 +96,7 @@ pub async fn remove_file_when_older(filepath: impl AsRef<Path> + Display) {
 }
 
 async fn inner_remove_file_when_older(filepath: impl AsRef<Path> + Display) -> std::io::Result<()> {
-    if is_current_running_newer(&filepath).is_ok_and(|v| v) {
+    if is_current_running_newer(&filepath).unwrap_or(false) {
         tracing::info!("remove {filepath} because it`s older");
         tokio::fs::remove_file(filepath).await?;
     }

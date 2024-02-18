@@ -75,6 +75,7 @@ pub async fn check_update_binary(update_filepath: &str, original_filepath: &str)
 
 /// check filepath binary can execute success
 pub async fn binary_filepath_execute_success(filepath: &str) -> Result<bool> {
+    tracing::debug!("check binary execute {filepath}");
     if !Path::new(filepath).exists() {
         return Ok(false);
     }

@@ -31,6 +31,11 @@ struct User {
     pub name: String,
 }
 
+#[derive(rust_embed::RustEmbed)]
+#[prefix = "embed_files/"]
+#[folder = "src/bin/"]
+pub struct Asset;
+
 async fn example() -> Json<User> {
     Json(User {
         name: "hello".to_owned(),

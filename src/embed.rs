@@ -1,17 +1,10 @@
 use async_trait::async_trait;
 use rust_embed::RustEmbed;
+use snafu::ResultExt;
+use std::path::Path;
 
-use crate::error::Result;
+use crate::error::{CommonIoSnafu, Result};
 use crate::helper;
-
-#[derive(RustEmbed)]
-#[prefix = "embed_files/"]
-#[folder = "src/assets/"]
-pub struct Asset;
-impl AssetExtractExt for Asset {}
-
-pub const EXTRACT_SWAGGER_DIR_PATH: &str = "embed_files/swagger";
-pub const EXTRACT_DIR_PATH: &str = "embed_files";
 
 /// usage
 /// ```
@@ -26,7 +19,7 @@ pub const EXTRACT_DIR_PATH: &str = "embed_files";
 /// impl AssetExtractExt for Asset {}
 ///
 /// async fn extract() -> Result<()>{
-/// #   Asset::extract().await?;
+///     Asset::extract().await?;
 ///     Ok(())
 /// }
 ///
@@ -42,17 +35,32 @@ pub trait AssetExtractExt: RustEmbed {
         for file in Self::iter() {
             tracing::debug!("extract {}", file.as_ref());
             let filepath = file.as_ref();
-            if helper::is_current_running_newer(filepath).is_ok_and(|v| v) {
+            if helper::is_current_running_newer(filepath).unwrap_or(true) {
                 let file = Self::get(filepath).unwrap().data.clone();
                 helper::write_filepath_with_data(filepath, file)?;
             } else {
                 tracing::debug!("skip {filepath} because it newer");
+                continue;
+            }
+        }
+        Ok(())
+    }
+
+    fn update_filenames() -> Vec<(String, String)> {
+        vec![]
+    }
+
+    async fn update_files() -> Result<()> {
+        for (src, dst) in Self::update_filenames() {
+            if Path::new(&src).exists() {
+                tokio::fs::rename(&src, &dst).await.context(CommonIoSnafu)?;
             }
         }
         Ok(())
     }
 
     async fn extract() -> Result<()> {
+        Self::update_files().await?;
         Self::before_extract().await?;
         Self::perform_extract().await?;
         Self::after_extract().await?;
@@ -63,3 +71,13 @@ pub trait AssetExtractExt: RustEmbed {
         Ok(())
     }
 }
+
+#[derive(rust_embed::RustEmbed)]
+#[prefix = "embed_files/"]
+#[folder = "src/assets/"]
+pub struct Asset;
+
+pub const EXTRACT_SWAGGER_DIR_PATH: &str = "embed_files/swagger";
+pub const EXTRACT_DIR_PATH: &str = "embed_files";
+
+impl AssetExtractExt for Asset {}
