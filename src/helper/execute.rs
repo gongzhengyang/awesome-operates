@@ -24,7 +24,7 @@ pub async fn execute_command_with_args_sender(cmd: &str, args: Vec<String>, tx: 
     tracing::info!("execute command `{cmd}` with args: `{args:?}`");
     let mut child = Command::new(cmd)
         .kill_on_drop(true)
-        .args(args)
+        .args(args.clone())
         .stdout(Stdio::piped())
         .spawn()
         .expect("fail to execute");
@@ -50,6 +50,7 @@ pub async fn execute_command_with_args_sender(cmd: &str, args: Vec<String>, tx: 
     {
         tx.send(line).await.unwrap();
     }
+    tracing::debug!("cmd:[{cmd}] with args {args:?} is over");
 }
 
 /// ```rust

@@ -40,7 +40,6 @@ pub trait AssetExtractExt: RustEmbed {
                 helper::write_filepath_with_data(filepath, file)?;
             } else {
                 tracing::debug!("skip {filepath} because it newer");
-                continue;
             }
         }
         Ok(())
