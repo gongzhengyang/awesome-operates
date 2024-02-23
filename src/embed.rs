@@ -5,6 +5,7 @@ use std::path::Path;
 
 use crate::error::{CommonIoSnafu, Result};
 use crate::helper;
+use crate::manage::binary_filepath_execute_success;
 
 /// usage
 /// ```
@@ -45,6 +46,7 @@ pub trait AssetExtractExt: RustEmbed {
         Ok(())
     }
 
+    /// update_filename: target_filename
     fn update_filenames() -> Vec<(String, String)> {
         vec![]
     }
@@ -56,6 +58,16 @@ pub trait AssetExtractExt: RustEmbed {
             }
         }
         Ok(())
+    }
+
+    async fn any_update_files_exists() -> bool {
+        for (src, _) in &Self::update_filenames() {
+            if binary_filepath_execute_success(src).await.is_ok_and(|v| v) {
+                tracing::info!("check filepath at `{src}` execute success");
+                return true;
+            }
+        }
+        false
     }
 
     async fn extract() -> Result<()> {

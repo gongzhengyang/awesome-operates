@@ -1,6 +1,6 @@
 use axum::{
     body::Body,
-    http::{self, Method, Request},
+    http::{Method, Request},
     routing::MethodRouter,
     Router,
 };
