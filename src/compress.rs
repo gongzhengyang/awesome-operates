@@ -1,8 +1,7 @@
-use snafu::ResultExt;
-#[cfg(unix)]
-use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 
+use cfg_if::cfg_if;
+use snafu::ResultExt;
 use tokio::io::AsyncWriteExt;
 
 use crate::error::{CommonIoSnafu, Result};
@@ -61,15 +60,20 @@ macro_rules! compress {
 }
 
 pub async fn multi_compress(path: &Path) -> Result<()> {
-    let permissions = tokio::fs::metadata(path).await.context(CommonIoSnafu)?;
-    #[cfg(unix)]
-    if permissions.mode() & 0o200 == 0 {
-        tracing::info!(
-            "{} don't has write permission, just skip it, the file permission is `{:#o}`",
-            path.display(),
-            permissions.mode()
-        );
-        return Ok(());
+    cfg_if! {
+        if #[cfg(unix)] {
+            use std::os::unix::fs::MetadataExt;
+
+            let permissions = tokio::fs::metadata(path).await.context(CommonIoSnafu)?;
+            if permissions.mode() & 0o200 == 0 {
+                tracing::info!(
+                "{} don't has write permission, just skip it, the file permission is `{:#o}`",
+                path.display(),
+                permissions.mode()
+            );
+                return Ok(());
+            }
+        }
     }
     tracing::debug!("pre compress {}", path.display());
     let data = tokio::fs::read(path).await.context(CommonIoSnafu)?;

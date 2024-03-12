@@ -8,7 +8,7 @@
 /// then, you can use
 ///```
 ///  use awesome_operates::build::program_about;
-///  fn main() {
+///  fn server() {
 ///     println!("{}", program_about());
 /// }
 /// ```
@@ -35,8 +35,12 @@ pub fn program_about() -> &'static str {
         ("branch", option_env!("GIT_BRANCH")),
         ("commit", option_env!("GIT_COMMIT")),
         ("git dirty", option_env!("GIT_DIRTY")),
-        ("build datetime", option_env!("BUILD_DATETIME"))
-    ].iter().map(|(k, v)| format!("{k}: {}", v.unwrap_or_default())).collect::<Vec<String>>().join("\n");
+        ("build datetime", option_env!("BUILD_DATETIME")),
+    ]
+    .iter()
+    .map(|(k, v)| format!("{k}: {}", v.unwrap_or_default()))
+    .collect::<Vec<String>>()
+    .join("\n");
     let value = Box::new(values);
     Box::leak(value)
 }

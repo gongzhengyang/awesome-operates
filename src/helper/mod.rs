@@ -1,13 +1,13 @@
 use std::path::{Path, PathBuf};
-use std::process::Output;
 use std::time::Duration;
 
 use cfg_if::cfg_if;
-use snafu::{OptionExt, ResultExt};
+use snafu::ResultExt;
 
 pub use execute::{
-    execute_command, execute_command_with_args_sender, is_current_running_newer,
-    kill_process_by_pid, remove_file_when_older,
+    add_execute_permission, execute_command, execute_command_with_args_sender,
+    is_current_running_newer, kill_process_by_pid, remove_file_when_older,
+    sync_add_execute_permission,
 };
 pub use format::{
     decimal_with_four, decimal_with_two, default_formatted_now, format_from_timestamp,
@@ -18,7 +18,7 @@ pub use iter::iter_object;
 pub use network::{get_interface_ips, get_virtual_interfaces, sync_get_virtual_interfaces};
 pub use version::{calculate_agent_version, get_binary_file_version, get_pkg_version};
 
-use crate::error::{CommonIoSnafu, OptionNoneSnafu, Result, ZipExtractSnafu};
+use crate::error::{CommonIoSnafu, Result, ZipExtractSnafu};
 
 mod execute;
 mod format;
@@ -54,21 +54,6 @@ pub fn get_program_args(excludes: &Vec<&str>) -> Vec<String> {
         .collect::<Vec<String>>()
 }
 
-#[cfg(unix)]
-pub async fn add_execute_permission(filepath: &str) -> Result<Output> {
-    let command = format!("chmod a+x {}", filepath);
-    execute_command(&command).await
-}
-
-#[cfg(unix)]
-pub fn sync_add_execute_permission(filepath: &str) -> Result<Output> {
-    let command = format!("chmod a+x {}", filepath);
-    std::process::Command::new("sh")
-        .args(["-c", &command])
-        .output()
-        .context(CommonIoSnafu)
-}
-
 /// one can
 pub fn write_filepath_with_data(filepath: impl AsRef<Path>, file: impl AsRef<[u8]>) -> Result<()> {
     if let Some(parent) = filepath.as_ref().parent() {
@@ -78,23 +63,34 @@ pub fn write_filepath_with_data(filepath: impl AsRef<Path>, file: impl AsRef<[u8
         .context(CommonIoSnafu)
         .is_err()
     {
-        let path = filepath.as_ref().to_owned();
         #[cfg(unix)]
-        tokio::spawn(async move {
-            let filename = path.file_name().unwrap_or_default().to_string_lossy();
-            if !filename.is_empty() {
-                let _ = execute_command(&format!("pkill -9 {}", filename)).await;
-            }
-        });
-        std::thread::sleep(Duration::from_secs(5));
-        std::fs::write(&filepath, file).context(CommonIoSnafu)?;
+        try_rewrite(&filepath, &file)?;
     }
     if filepath.as_ref().extension().is_some_and(|v| v.eq("zip")) {
         zip_extensions::zip_extract(&filepath.as_ref().to_path_buf(), &PathBuf::new())
             .context(ZipExtractSnafu)?;
     }
-    #[cfg(unix)]
-    sync_add_execute_permission(filepath.as_ref().to_str().context(OptionNoneSnafu)?)?;
+    cfg_if! {
+        if #[cfg(unix)] {
+            use snafu::OptionExt;
+
+            sync_add_execute_permission(filepath.as_ref().to_str().context(crate::error::OptionNoneSnafu)?)?;
+        }
+    }
+    Ok(())
+}
+
+#[cfg(unix)]
+fn try_rewrite(filepath: impl AsRef<Path>, file: impl AsRef<[u8]>) -> Result<()> {
+    let path = filepath.as_ref().to_owned();
+    tokio::spawn(async move {
+        let filename = path.file_name().unwrap_or_default().to_string_lossy();
+        if !filename.is_empty() {
+            let _ = execute_command(&format!("pkill -9 {}", filename)).await;
+        }
+    });
+    std::thread::sleep(Duration::from_secs(5));
+    std::fs::write(&filepath, file).context(CommonIoSnafu)?;
     Ok(())
 }
 

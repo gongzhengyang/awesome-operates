@@ -112,11 +112,24 @@ pub fn is_current_running_newer(filepath: impl AsRef<Path> + Display) -> std::io
     //     .await?
     //     .modified()?;
     let newer = current_running > check;
-    let format_time = |v| chrono::DateTime::<chrono::offset::Local>::from(v);
+    let format_time = chrono::DateTime::<chrono::offset::Local>::from;
     tracing::debug!(
         "check file modified current: {:?} check [{filepath}]{:?} newer: {newer}",
         format_time(current_running),
         format_time(check)
     );
     Ok(newer)
+}
+
+pub async fn add_execute_permission(filepath: &str) -> Result<Output> {
+    let command = format!("chmod a+x {}", filepath);
+    execute_command(&command).await
+}
+
+pub fn sync_add_execute_permission(filepath: &str) -> Result<Output> {
+    let command = format!("chmod a+x {}", filepath);
+    std::process::Command::new("sh")
+        .args(["-c", &command])
+        .output()
+        .context(CommonIoSnafu)
 }

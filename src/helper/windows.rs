@@ -11,7 +11,9 @@ where
     }
     let output = Command::new("powershell")
         .args(&["Get-Process", "-id", &pid.to_string()])
-        .output().await.unwrap();
+        .output()
+        .await
+        .unwrap();
     let output = String::from_utf8_lossy(&output.stdout);
     output.contains("ProcessName") && output.contains("Id")
 }
