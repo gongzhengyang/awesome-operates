@@ -33,7 +33,7 @@ WantedBy=multi-user.target
     tokio::fs::write(service_config_path(service_name), service_config)
         .await
         .context(CommonIoSnafu)?;
-    let mut command = format!("systemctl enable {service_name} && systemctl daemon-reload");
+    let mut command = format!("systemctl daemon-reload && systemctl enable {service_name}");
     if restart {
         command.push_str(&format!("&& systemctl restart {service_name}"));
     }
