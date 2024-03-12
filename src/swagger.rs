@@ -28,13 +28,8 @@ use crate::error::{CommonIoSnafu, Result};
 ///    api.title("数据采集")
 ///}
 ///
-///#[tokio::main]
-///async fn main() {
-///    tracing_subscriber::fmt::init();
-///  //  server().await.unwrap();
-///}
-///
 ///async fn server() -> Result<()> {
+///    tracing_subscriber::fmt::init();
 ///    aide::gen::on_error(|error| {
 ///        println!("{error}")
 ///    });
@@ -73,10 +68,10 @@ pub struct InitSwagger {
 /// ```rust,no_run
 /// use awesome_operates::swagger::InitSwagger;
 /// use awesome_operates::error::Result;
+/// use awesome_operates::embed::AssetExtractExt;
 ///
-/// #[tokio::test]
 /// async fn openapi_write() -> Result<()> {
-///     awesome_operates::extract_all_files!(awesome_operates::embed::Asset);
+///     awesome_operates::embed::Asset::extract().await?;
 ///     InitSwagger::new(
 ///         "embed_files/swagger/",
 ///         "swagger-initializer.js",

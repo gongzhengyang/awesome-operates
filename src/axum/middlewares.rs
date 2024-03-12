@@ -22,6 +22,7 @@ pub async fn query_trim_empty_items_middleware(request: Request, next: Next) -> 
     next.run(request).await
 }
 
+#[inline]
 fn query_trim(parts: &mut Parts) -> Result<()> {
     let query = parts.uri.query().context(OptionNoneSnafu)?;
     let values = serde_urlencoded::from_str::<Vec<(String, String)>>(query)

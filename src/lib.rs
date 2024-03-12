@@ -1,16 +1,13 @@
 pub mod axum;
 pub mod build;
-mod cache_db;
 pub mod compress;
 pub mod consts;
 pub mod embed;
 pub mod error;
-mod file;
 pub mod graceful;
 pub mod helper;
 pub mod log;
 pub mod manage;
-pub mod proxy;
 pub mod router;
 pub mod schedule;
 pub mod server;

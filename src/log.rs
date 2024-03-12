@@ -11,8 +11,8 @@ use crate::error::{CommonIoSnafu, LogFileBuildSnafu, Result, TracingSetGlobalSna
 /// ```rust
 /// use awesome_operates::log::tracing_both_file_stdout;
 /// use std::time::Duration;
-/// #[tokio::main]
-///  async fn main() {
+///
+///  async fn server() {
 ///     // this is very important, must receive worker_guard value
 ///     // or file writer will take no reflect
 ///     let _guard = tracing_both_file_stdout("target", "", "agent.log", None).await;
