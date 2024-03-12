@@ -1,5 +1,4 @@
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 
 use cfg_if::cfg_if;
 use snafu::ResultExt;
@@ -82,6 +81,7 @@ pub fn write_filepath_with_data(filepath: impl AsRef<Path>, file: impl AsRef<[u8
 
 #[cfg(unix)]
 fn try_rewrite(filepath: impl AsRef<Path>, file: impl AsRef<[u8]>) -> Result<()> {
+    use std::time::Duration;
     let path = filepath.as_ref().to_owned();
     tokio::spawn(async move {
         let filename = path.file_name().unwrap_or_default().to_string_lossy();
